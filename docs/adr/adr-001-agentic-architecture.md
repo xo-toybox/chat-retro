@@ -45,13 +45,47 @@ For this project:
 - Direct reading + grep/jq may outperform embedding-based clustering
 - Embeddings become an optional tool the agent uses when clustering genuinely helps
 
-### Agent Capabilities
+### SDK Built-in Tools
 
-| Capability | Implementation |
-|------------|----------------|
-| Data access | Read exports, search/filter with grep/jq |
-| Embedding | Optional; agent decides if clustering helps |
-| Rendering | Artifacts for exploration, files for delivery |
+Use Claude Agent SDK's built-in tools directly. No custom MCP tools for core functionality.
+
+| Tool | Purpose | Example |
+|------|---------|---------|
+| **Read** | Load file contents | Read conversations, state |
+| **Grep** | Content search (ripgrep) | Find conversations mentioning "python" |
+| **Glob** | File pattern matching | Discover export files |
+| **Bash** | Shell commands | `jq` queries, data transforms |
+| **Write** | Create files | Generate artifacts |
+| **Edit** | Modify files | Update state.json |
+| **Task** | Launch subagents | Deep-dive on specific topics |
+
+**Why built-in tools, not custom MCP:**
+- SDK tools are what Claude Code uses—battle-tested for agentic search
+- No tool implementation to maintain
+- Agent already knows how to use them effectively
+- Aligns with "give the agent a computer" philosophy
+
+**Example data access patterns:**
+```bash
+# Search conversations
+Grep: pattern="python" path="./conversations.json"
+
+# Count conversations  
+Bash: jq '.conversations | length' conversations.json
+
+# Extract for sampling
+Bash: jq -r '.conversations[].title' conversations.json | head -50
+```
+
+### Custom Code (Minimal)
+
+Only these components require custom implementation:
+
+| Component | Purpose | Why Custom |
+|-----------|---------|------------|
+| CLI wrapper | User interaction loop | SDK provides tools, not UI |
+| HTML bundler | Inline D3.js into artifacts | Offline artifact requirement (ADR-003) |
+| State schema | Validate state.json | Type safety for pattern data |
 
 ### What the Agent Decides
 
@@ -74,6 +108,7 @@ For this project:
 - **Emergent patterns**: Discovers what's actually in the data
 - **Collaborative**: User and agent refine together
 - **Adaptable**: Same tool works for different usage patterns
+- **Minimal code**: SDK handles tool execution, context management
 
 ### Negative
 
@@ -81,6 +116,7 @@ For this project:
 - **Slower iteration**: Agent loop vs instant script
 - **Less predictable**: Output varies by run
 - **Requires interaction**: Not a batch-and-forget tool
+- **SDK dependency**: Tied to Claude Agent SDK behavior and updates
 
 ### Neutral
 
@@ -93,10 +129,11 @@ For this project:
 | Deterministic pipeline | Rejected: quality ceiling too low |
 | Hybrid (rules + agent refinement) | Rejected: added complexity without clear benefit |
 | Full autonomy (no user interaction) | Rejected: user guidance improves results significantly |
+| Custom MCP tools | Rejected: duplicates SDK functionality; more code to maintain |
 
 ## References
 
 - [Claude Code: Best practices for agentic coding](https://www.anthropic.com/engineering/claude-code-best-practices) - Anthropic Engineering. Key patterns: read before coding, use subagents for complex problems, make a plan first.
 - [Effective harnesses for long-running agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents) - Anthropic Engineering. Multi-session state management via progress files.
-- [Building agents with the Claude Agent SDK](https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk) - Anthropic Engineering. SDK fundamentals.
+- [Building agents with the Claude Agent SDK](https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk) - Anthropic Engineering. SDK fundamentals, built-in tools.
 - [Archived: Spec v1 Deterministic Pipeline](../archive/spec-v1-deterministic-pipeline.md)

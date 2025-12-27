@@ -39,17 +39,9 @@ The agent works like an analyst: it proposes what it sees, you redirect based on
 
 ## Agent Capabilities
 
-### Data Access
+Uses Claude Agent SDK built-in tools (Read, Grep, Glob, Bash, Write, Edit) for all core functionality. No custom MCP tools required.
 
-| Capability | Implementation |
-|------------|----------------|
-| Read conversations | Direct file access (JSON) |
-| Search/filter | grep, jq, text matching |
-| Cluster (optional) | Agent decides if embeddings help |
-
-The agent chooses its approach based on what the data needs. Embeddings and clustering are tools, not requirements.
-
-Key insight from Claude Code: Anthropic found that agentic search (grep/glob) often outperforms embedding-based retrieval. For a single JSON file, direct text analysis may work better than vectorization. See [ADR-001](adr/adr-001-agentic-architecture.md) for details.
+See [ADR-001](adr/adr-001-agentic-architecture.md) for tooling rationale, examples, and custom component list.
 
 ### Supported Export Formats
 
@@ -100,7 +92,11 @@ State tracks discovered patterns, user preferences, and output history across se
 
 ## Invocation
 
-Python script using Claude Agent SDK. User interacts via terminal.
+```bash
+chat-retro ./path/to/conversations.json
+```
+
+Python CLI using Claude Agent SDK. User interacts via terminal with streaming responses.
 
 ## Success Criteria
 
@@ -111,13 +107,26 @@ Python script using Claude Agent SDK. User interacts via terminal.
 | Interpretable | Agent explains its reasoning; patterns make sense |
 | Collaborative | Process feels like working with an analyst, not running a script |
 
+## Development Approach
+
+Measure before changing. Decisions about optimization, scaffolding, or quality improvements require data, not intuition.
+
+| Change Type | Requires First |
+|-------------|----------------|
+| Performance optimization | Measurements showing the bottleneck |
+| Caching, batching, retries | Failure/latency data justifying complexity |
+| Quality improvements | Eval criteria + baseline measurements |
+| New features | Usage data or clear user need |
+
+Agent output is non-deterministic. "It seems better" is not evidence.
+
 ## Design Decisions
 
 See `/docs/adr/` for architectural decisions:
 
 | ADR | Decision |
 |-----|----------|
-| [001](adr/adr-001-agentic-architecture.md) | Agentic architecture over deterministic pipeline |
+| [001](adr/adr-001-agentic-architecture.md) | Agentic architecture; SDK built-in tools |
 | [002](adr/adr-002-local-state-only.md) | Local state only; no Claude memory integration |
 | [003](adr/adr-003-offline-artifacts.md) | Self-contained offline HTML artifacts |
 | [004](adr/adr-004-modal-data-safety.md) | Modal for GPU compute (contingent) |

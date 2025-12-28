@@ -17,6 +17,7 @@ from claude_code_sdk import (
     TextBlock,
 )
 
+from .agents import get_agents_dict
 from .hooks import HOOK_MATCHERS
 from .prompts import SYSTEM_PROMPT
 from .usage import UsageReport
@@ -71,6 +72,7 @@ class SessionManager:
             cwd=str(self.cwd),
             resume=self.resume_id,
             hooks=HOOK_MATCHERS,
+            agents=get_agents_dict(),
         )
 
     def _save_session_id(self, session_id: str) -> None:

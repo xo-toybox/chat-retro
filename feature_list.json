@@ -272,7 +272,7 @@
         "Axis labels show message counts",
         "Bins correspond to length ranges"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "agent-topic-extractor",
@@ -284,7 +284,7 @@
         "Returns structured topic list with confidence scores",
         "Integrates with main session via Task tool"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "agent-sentiment-tracker",
@@ -296,7 +296,7 @@
         "Returns sentiment timeline data",
         "Identifies emotional peaks and valleys"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "agent-pattern-detector",
@@ -308,7 +308,7 @@
         "Returns pattern observations with examples",
         "Flags potential anti-patterns"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "agent-temporal-analyst",
@@ -320,7 +320,7 @@
         "Returns temporal insights (peak times, trends)",
         "Correlates time with topics"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "insight-prompt-improvements",

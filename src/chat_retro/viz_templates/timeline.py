@@ -77,142 +77,93 @@ class TimelineViz:
         return """
 (function() {
     const data = DATA.timeline || [];
-    if (data.length === 0) {
-        document.getElementById('visualization').innerHTML = '<p>No timeline data available.</p>';
-        return;
-    }
-
-    // Parse dates and find ranges
-    const parseDate = d3.timeParse("%Y-%m-%d");
-    const parsedData = data.map(d => ({
-        date: parseDate(d.date),
-        count: d.count
-    })).filter(d => d.date !== null);
-
-    if (parsedData.length === 0) {
-        document.getElementById('visualization').innerHTML = '<p>Could not parse timeline dates.</p>';
-        return;
-    }
-
-    // Set up dimensions
     const container = document.getElementById('visualization');
-    const margin = {top: 20, right: 30, bottom: 50, left: 50};
-    const width = Math.min(container.clientWidth || 800, 1000) - margin.left - margin.right;
+
+    if (data.length === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:80px 20px;color:#6b7280;font-family:system-ui,-apple-system,sans-serif"><p style="font-size:16px;margin:0">No timeline data available</p></div>';
+        return;
+    }
+
+    // Parse dates
+    const parseDate = d3.timeParse("%Y-%m-%d");
+    const parsedData = data.map(d => ({date: parseDate(d.date), count: d.count})).filter(d => d.date !== null);
+    if (parsedData.length === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:80px 20px;color:#6b7280;font-family:system-ui">Could not parse dates</div>';
+        return;
+    }
+
+    // Dimensions
+    const margin = {top: 60, right: 40, bottom: 60, left: 60};
+    const width = Math.min(container.clientWidth || 800, 960) - margin.left - margin.right;
     const height = 400 - margin.top - margin.bottom;
 
-    // Clear and create SVG
     container.innerHTML = '';
     const svg = d3.select('#visualization')
         .append('svg')
         .attr('width', width + margin.left + margin.right)
         .attr('height', height + margin.top + margin.bottom)
+        .style('font-family', 'system-ui, -apple-system, sans-serif')
         .append('g')
         .attr('transform', `translate(${margin.left},${margin.top})`);
 
-    // X scale (time)
-    const x = d3.scaleTime()
-        .domain(d3.extent(parsedData, d => d.date))
-        .range([0, width]);
+    // Gradient
+    const defs = svg.append('defs');
+    const grad = defs.append('linearGradient').attr('id', 'areaGrad').attr('x1', '0%').attr('y1', '0%').attr('x2', '0%').attr('y2', '100%');
+    grad.append('stop').attr('offset', '0%').attr('stop-color', '#8b5cf6').attr('stop-opacity', 0.4);
+    grad.append('stop').attr('offset', '100%').attr('stop-color', '#8b5cf6').attr('stop-opacity', 0.05);
 
-    // Y scale (count)
-    const y = d3.scaleLinear()
-        .domain([0, d3.max(parsedData, d => d.count)])
-        .nice()
-        .range([height, 0]);
+    // Scales
+    const x = d3.scaleTime().domain(d3.extent(parsedData, d => d.date)).range([0, width]);
+    const y = d3.scaleLinear().domain([0, d3.max(parsedData, d => d.count) * 1.1]).nice().range([height, 0]);
 
-    // Area generator
-    const area = d3.area()
-        .x(d => x(d.date))
-        .y0(height)
-        .y1(d => y(d.count))
-        .curve(d3.curveMonotoneX);
+    // Grid
+    svg.append('g').attr('class', 'grid').selectAll('line').data(y.ticks(5)).enter().append('line')
+        .attr('x1', 0).attr('x2', width).attr('y1', d => y(d)).attr('y2', d => y(d))
+        .attr('stroke', '#f3f4f6').attr('stroke-width', 1);
 
-    // Line generator
-    const line = d3.line()
-        .x(d => x(d.date))
-        .y(d => y(d.count))
-        .curve(d3.curveMonotoneX);
+    // Area + Line
+    const area = d3.area().x(d => x(d.date)).y0(height).y1(d => y(d.count)).curve(d3.curveMonotoneX);
+    const line = d3.line().x(d => x(d.date)).y(d => y(d.count)).curve(d3.curveMonotoneX);
+    svg.append('path').datum(parsedData).attr('fill', 'url(#areaGrad)').attr('d', area);
+    svg.append('path').datum(parsedData).attr('fill', 'none').attr('stroke', '#8b5cf6').attr('stroke-width', 2.5).attr('stroke-linejoin', 'round').attr('d', line);
 
-    // Draw area
-    svg.append('path')
-        .datum(parsedData)
-        .attr('fill', 'rgba(66, 133, 244, 0.3)')
-        .attr('d', area);
+    // Axes
+    svg.append('g').attr('transform', `translate(0,${height})`).call(d3.axisBottom(x).ticks(6).tickFormat(d3.timeFormat('%b %d')).tickSize(0).tickPadding(10))
+        .call(g => g.select('.domain').attr('stroke', '#e5e7eb'))
+        .call(g => g.selectAll('text').attr('fill', '#6b7280').style('font-size', '11px'));
+    svg.append('g').call(d3.axisLeft(y).ticks(5).tickSize(-width).tickPadding(10))
+        .call(g => g.select('.domain').remove())
+        .call(g => g.selectAll('.tick line').attr('stroke', '#f3f4f6'))
+        .call(g => g.selectAll('text').attr('fill', '#6b7280').style('font-size', '11px'));
 
-    // Draw line
-    svg.append('path')
-        .datum(parsedData)
-        .attr('fill', 'none')
-        .attr('stroke', '#4285f4')
-        .attr('stroke-width', 2)
-        .attr('d', line);
+    // Labels
+    svg.append('text').attr('x', width / 2).attr('y', height + 45).attr('text-anchor', 'middle').attr('fill', '#9ca3af').style('font-size', '12px').text('Date');
+    svg.append('text').attr('transform', 'rotate(-90)').attr('x', -height / 2).attr('y', -45).attr('text-anchor', 'middle').attr('fill', '#9ca3af').style('font-size', '12px').text('Conversations');
 
-    // Draw dots
-    svg.selectAll('.dot')
-        .data(parsedData)
-        .enter()
-        .append('circle')
-        .attr('class', 'dot')
-        .attr('cx', d => x(d.date))
-        .attr('cy', d => y(d.count))
-        .attr('r', 4)
-        .attr('fill', '#4285f4')
-        .attr('stroke', 'white')
-        .attr('stroke-width', 2);
-
-    // X axis
-    svg.append('g')
-        .attr('transform', `translate(0,${height})`)
-        .call(d3.axisBottom(x)
-            .ticks(Math.min(parsedData.length, 10))
-            .tickFormat(d3.timeFormat("%b %d")))
-        .selectAll('text')
-        .attr('transform', 'rotate(-45)')
-        .style('text-anchor', 'end');
-
-    // Y axis
-    svg.append('g')
-        .call(d3.axisLeft(y).ticks(5));
-
-    // Y axis label
-    svg.append('text')
-        .attr('transform', 'rotate(-90)')
-        .attr('y', -40)
-        .attr('x', -height / 2)
-        .attr('text-anchor', 'middle')
-        .style('font-size', '12px')
-        .text('Conversations');
-
-    // Title
-    svg.append('text')
-        .attr('x', width / 2)
-        .attr('y', -5)
-        .attr('text-anchor', 'middle')
-        .style('font-size', '14px')
-        .style('font-weight', 'bold')
-        .text('Conversation Frequency Over Time');
+    // Title + Summary
+    const total = d3.sum(parsedData, d => d.count);
+    const avg = (total / parsedData.length).toFixed(1);
+    svg.append('text').attr('x', 0).attr('y', -35).attr('fill', '#111827').style('font-size', '18px').style('font-weight', '600').text('Conversation Activity');
+    svg.append('text').attr('x', 0).attr('y', -15).attr('fill', '#6b7280').style('font-size', '13px').text(`${total} total conversations · ${avg} avg per day`);
 
     // Tooltip
-    const tooltip = d3.select('#visualization')
-        .append('div')
-        .style('position', 'absolute')
-        .style('background', 'rgba(0,0,0,0.8)')
-        .style('color', 'white')
-        .style('padding', '8px 12px')
-        .style('border-radius', '4px')
-        .style('font-size', '12px')
-        .style('pointer-events', 'none')
-        .style('opacity', 0);
+    const tooltip = d3.select('#visualization').append('div')
+        .style('position', 'absolute').style('background', '#1f2937').style('color', '#fff').style('padding', '12px 16px')
+        .style('border-radius', '8px').style('font-size', '13px').style('font-family', 'system-ui').style('box-shadow', '0 10px 25px -5px rgba(0,0,0,0.2)')
+        .style('pointer-events', 'none').style('opacity', 0).style('transition', 'opacity 0.15s');
 
-    svg.selectAll('.dot')
+    // Dots
+    svg.selectAll('.dot').data(parsedData).enter().append('circle').attr('class', 'dot')
+        .attr('cx', d => x(d.date)).attr('cy', d => y(d.count)).attr('r', 5)
+        .attr('fill', '#8b5cf6').attr('stroke', '#fff').attr('stroke-width', 2).style('cursor', 'pointer')
         .on('mouseover', function(event, d) {
-            tooltip.transition().duration(200).style('opacity', 1);
-            tooltip.html(`<strong>${d3.timeFormat("%B %d, %Y")(d.date)}</strong><br/>${d.count} conversation${d.count !== 1 ? 's' : ''}`)
-                .style('left', (event.pageX + 10) + 'px')
-                .style('top', (event.pageY - 28) + 'px');
+            d3.select(this).transition().duration(100).attr('r', 8);
+            tooltip.style('opacity', 1).html(`<div style="font-weight:600;margin-bottom:4px">${d3.timeFormat('%B %d, %Y')(d.date)}</div><div style="color:#c4b5fd">${d.count} conversation${d.count !== 1 ? 's' : ''}</div>`)
+                .style('left', (event.pageX + 15) + 'px').style('top', (event.pageY - 50) + 'px');
         })
         .on('mouseout', function() {
-            tooltip.transition().duration(200).style('opacity', 0);
+            d3.select(this).transition().duration(100).attr('r', 5);
+            tooltip.style('opacity', 0);
         });
 })();
 """

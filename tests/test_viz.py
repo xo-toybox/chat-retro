@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 from datetime import datetime
-from chat_retro.viz_templates import TimelineViz, HeatmapViz, TopicClusterViz
+from chat_retro.viz_templates import TimelineViz, HeatmapViz, TopicClusterViz, LengthDistributionViz
 from chat_retro.artifacts import ArtifactGenerator
 
 
@@ -140,10 +140,13 @@ class TestTimelineIntegration:
             visualization_code=TimelineViz.get_js_code(),
         )
 
-        # No external CSS/JS references
+        # No external CSS/JS references (url(#id) for SVG gradients is ok)
         assert 'href="http' not in html
         assert 'src="http' not in html
-        assert 'url(' not in html or 'url(data:' in html
+        # Allow internal SVG references like url(#gradientId), block external urls
+        import re
+        external_urls = re.findall(r'url\(["\']?https?://', html)
+        assert not external_urls, f"Found external URLs: {external_urls}"
 
     def test_html_renders_with_real_data(self, tmp_path):
         """Save and verify HTML artifact with real-ish data."""
@@ -409,3 +412,157 @@ class TestTopicClusterIntegration:
         assert "Topic Clusters" in content
         assert '"nodes"' in content
         assert '"links"' in content
+
+
+class TestLengthDistributionViz:
+    """Tests for LengthDistributionViz visualization."""
+
+    def test_prepare_data_empty(self):
+        """Empty conversation list returns empty distribution."""
+        result = LengthDistributionViz.prepare_data([])
+        assert result == {"distribution": [], "stats": {}}
+
+    def test_prepare_data_with_mapping(self):
+        """Conversations with mapping dict count messages."""
+        conversations = [
+            {"mapping": {"m1": {}, "m2": {}, "m3": {}}},  # 3 messages
+            {"mapping": {"m1": {}}},  # 1 message
+            {"mapping": {"m1": {}, "m2": {}, "m3": {}, "m4": {}, "m5": {}}},  # 5 messages
+        ]
+        result = LengthDistributionViz.prepare_data(conversations, bin_size=5)
+
+        assert "distribution" in result
+        assert "stats" in result
+        assert result["stats"]["total"] == 3
+        assert result["stats"]["min"] == 1
+        assert result["stats"]["max"] == 5
+
+    def test_prepare_data_with_messages_list(self):
+        """Conversations with messages list count correctly."""
+        conversations = [
+            {"messages": [{"role": "user"}, {"role": "assistant"}]},  # 2 messages
+            {"messages": [{"role": "user"}]},  # 1 message
+        ]
+        result = LengthDistributionViz.prepare_data(conversations, bin_size=5)
+
+        assert result["stats"]["total"] == 2
+        assert result["stats"]["min"] == 1
+        assert result["stats"]["max"] == 2
+
+    def test_prepare_data_bins_correctly(self):
+        """Conversations are binned by length."""
+        # Create conversations with specific lengths
+        conversations = [
+            {"mapping": {f"m{i}": {} for i in range(3)}},  # 3 messages -> bin 1-5
+            {"mapping": {f"m{i}": {} for i in range(7)}},  # 7 messages -> bin 6-10
+            {"mapping": {f"m{i}": {} for i in range(8)}},  # 8 messages -> bin 6-10
+            {"mapping": {f"m{i}": {} for i in range(12)}},  # 12 messages -> bin 11-15
+        ]
+        result = LengthDistributionViz.prepare_data(conversations, bin_size=5)
+
+        # Should have 3 bins
+        assert len(result["distribution"]) == 3
+
+        bins = {d["bin"]: d["count"] for d in result["distribution"]}
+        assert bins.get("1-5") == 1
+        assert bins.get("6-10") == 2
+        assert bins.get("11-15") == 1
+
+    def test_prepare_data_calculates_mean(self):
+        """Mean is calculated correctly."""
+        conversations = [
+            {"mapping": {f"m{i}": {} for i in range(10)}},  # 10
+            {"mapping": {f"m{i}": {} for i in range(20)}},  # 20
+            {"mapping": {f"m{i}": {} for i in range(30)}},  # 30
+        ]
+        result = LengthDistributionViz.prepare_data(conversations)
+
+        assert result["stats"]["mean"] == 20.0
+
+    def test_prepare_data_calculates_median_odd(self):
+        """Median is calculated correctly for odd count."""
+        conversations = [
+            {"mapping": {f"m{i}": {} for i in range(5)}},
+            {"mapping": {f"m{i}": {} for i in range(10)}},
+            {"mapping": {f"m{i}": {} for i in range(15)}},
+        ]
+        result = LengthDistributionViz.prepare_data(conversations)
+
+        assert result["stats"]["median"] == 10
+
+    def test_prepare_data_calculates_median_even(self):
+        """Median is calculated correctly for even count."""
+        conversations = [
+            {"mapping": {f"m{i}": {} for i in range(4)}},
+            {"mapping": {f"m{i}": {} for i in range(6)}},
+            {"mapping": {f"m{i}": {} for i in range(8)}},
+            {"mapping": {f"m{i}": {} for i in range(10)}},
+        ]
+        result = LengthDistributionViz.prepare_data(conversations)
+
+        # Median of [4, 6, 8, 10] = (6 + 8) / 2 = 7
+        assert result["stats"]["median"] == 7
+
+    def test_prepare_data_fallback_length(self):
+        """Conversations without mapping or messages default to 1."""
+        conversations = [
+            {"other_field": "value"},
+            {"title": "Some conversation"},
+        ]
+        result = LengthDistributionViz.prepare_data(conversations)
+
+        assert result["stats"]["total"] == 2
+        assert result["stats"]["min"] == 1
+        assert result["stats"]["max"] == 1
+
+    def test_get_js_code_returns_string(self):
+        """JS code is returned as string."""
+        code = LengthDistributionViz.get_js_code()
+        assert isinstance(code, str)
+        assert len(code) > 100
+
+    def test_get_js_code_contains_d3_calls(self):
+        """JS code uses D3.js methods."""
+        code = LengthDistributionViz.get_js_code()
+        assert "d3.select" in code
+        assert "d3.scaleBand" in code
+        assert "d3.scaleLinear" in code
+
+    def test_get_js_code_references_data(self):
+        """JS code references DATA.distribution and DATA.stats."""
+        code = LengthDistributionViz.get_js_code()
+        assert "DATA.distribution" in code
+        assert "DATA.stats" in code
+
+    def test_get_js_code_handles_empty_data(self):
+        """JS code handles empty data gracefully."""
+        code = LengthDistributionViz.get_js_code()
+        assert "No length data" in code
+
+
+class TestLengthDistributionIntegration:
+    """Integration tests for length distribution with ArtifactGenerator."""
+
+    def test_generate_html_with_distribution(self, tmp_path):
+        """Length distribution can be integrated with ArtifactGenerator."""
+        generator = ArtifactGenerator(output_dir=tmp_path)
+
+        # Create sample conversations with varied lengths
+        conversations = [
+            {"mapping": {f"m{i}": {} for i in range(length)}}
+            for length in [3, 5, 7, 8, 10, 12, 15, 20, 25, 30]
+        ]
+        data = LengthDistributionViz.prepare_data(conversations)
+
+        path = generator.save_html(
+            filename="length-dist-test",
+            title="Conversation Length Distribution",
+            data=data,
+            visualization_code=LengthDistributionViz.get_js_code(),
+        )
+
+        assert path.exists()
+        content = path.read_text()
+        assert "Conversation Length Distribution" in content
+        assert '"distribution"' in content
+        assert '"stats"' in content

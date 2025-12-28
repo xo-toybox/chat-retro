@@ -1,11 +1,22 @@
 # Progress
 
 ## Current Status
-**v2 iteration started.** Phases 1-8 complete (20/40 features). Working on phases 9-13.
+**v2 iteration in progress.** Phases 1-10 complete (28/40 features). Working on phases 11-13.
 
-## v2 Features (pending)
-- viz-timeline, viz-heatmap, viz-topic-clusters, viz-length-distribution (Phase 9)
-- agent-topic-extractor, agent-sentiment-tracker, agent-pattern-detector, agent-temporal-analyst (Phase 10)
+## v2 Features
+### Phase 9 - Visualization Templates (complete)
+- viz-timeline: D3.js timeline (area chart)
+- viz-heatmap: 7x24 usage grid
+- viz-topic-clusters: Force-directed graph
+- viz-length-distribution: Histogram with stats
+
+### Phase 10 - Analysis Subagents (complete)
+- agent-topic-extractor: Topic extraction with clustering
+- agent-sentiment-tracker: Emotional tone evolution
+- agent-pattern-detector: Prompting patterns/anti-patterns
+- agent-temporal-analyst: Time-based usage patterns
+
+### Pending (Phases 11-13)
 - insight-prompt-improvements, insight-repetition-detection, insight-usage-optimization (Phase 11)
 - interact-filter-panel, interact-search, interact-detail-view, interact-annotations (Phase 12)
 - eval-quality-prompts, eval-rating-system, eval-gap-detection, eval-feedback-aggregation, eval-issue-reporter (Phase 13)
@@ -49,13 +60,25 @@
 | 6 | Artifact generator | Ralph-able | artifact-* (3 features) | done |
 | 7 | System prompts | Human gate | system-prompt, error-handling | done |
 | 8 | Integration test | Human gate | integration-test, claude-export-format, runtime-dirs | done |
-| 9 | Visualization templates | Ralph-able | viz-* (4 features) | pending |
-| 10 | Analysis subagents | Human gate | agent-* (4 features) | pending |
+| 9 | Visualization templates | Ralph-able | viz-* (4 features) | done |
+| 10 | Analysis subagents | Human gate | agent-* (4 features) | done |
 | 11 | Actionable insights | Human gate | insight-* (3 features) | pending |
 | 12 | Interactive artifacts | Ralph-able | interact-* (4 features) | pending |
 | 13 | Question-based eval | Human gate | eval-* (5 features) | pending |
 
 ## Session Log
+### Session 4 (2025-12-27) - Phase 10 Complete
+- Created agents.py with 4 subagent definitions
+- AgentDefinition dataclass for SDK compatibility
+- Wired agents to SessionManager via get_agents_dict()
+- 27 agent tests passing (137 total)
+
+### Session 3 (2025-12-27) - Phase 9 Complete
+- Implemented 4 visualization templates in viz_templates/
+- TimelineViz, HeatmapViz, TopicClusterViz, LengthDistributionViz
+- Polished with purple theme, gradients, modern tooltips
+- 45 viz tests passing (110 total)
+
 ### Session 2 (2025-12-27) - v2 Init
 - Added phases 9-13 with 20 new features
 - Updated impl-plan.md, feature_list.json, PROGRESS.md
@@ -83,6 +106,3 @@
 
 ## Open Questions
 None yet.
-
-## Infrastructure Notes
-No subagents or hooks created for orchestration - those are part of the product we're building, not for building it.

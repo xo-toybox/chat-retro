@@ -248,7 +248,7 @@
         "Weekday and hour labels visible",
         "Intensity corresponds to conversation frequency"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "viz-topic-clusters",

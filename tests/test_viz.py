@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 from datetime import datetime
-from chat_retro.viz_templates import TimelineViz
+from chat_retro.viz_templates import TimelineViz, HeatmapViz
 from chat_retro.artifacts import ArtifactGenerator
 
 
@@ -171,3 +171,109 @@ class TestTimelineIntegration:
         content = path.read_text()
         assert len(content) > 10000  # D3.js is large
         assert "30 Day Timeline" in content
+
+
+class TestHeatmapViz:
+    """Tests for HeatmapViz visualization."""
+
+    def test_prepare_data_empty(self):
+        """Empty conversation list returns empty heatmap."""
+        result = HeatmapViz.prepare_data([])
+        assert result == {"heatmap": []}
+
+    def test_prepare_data_aggregates_by_day_hour(self):
+        """Conversations are aggregated by day and hour."""
+        # Create timestamps for specific day/hour combinations
+        # Use a Monday at 9am (weekday=0 in Python, so Sunday=0 in our format means Monday=1)
+        monday_9am = datetime(2024, 1, 8, 9, 30).timestamp()  # Monday
+        monday_9am_2 = datetime(2024, 1, 8, 9, 45).timestamp()  # Same slot
+        tuesday_14pm = datetime(2024, 1, 9, 14, 0).timestamp()  # Tuesday 2pm
+
+        conversations = [
+            {"create_time": monday_9am},
+            {"create_time": monday_9am_2},
+            {"create_time": tuesday_14pm},
+        ]
+        result = HeatmapViz.prepare_data(conversations)
+
+        assert "heatmap" in result
+        assert len(result["heatmap"]) == 2
+
+        # Check counts
+        counts = {(item["day"], item["hour"]): item["count"] for item in result["heatmap"]}
+        # Monday = day 1 (0=Sunday)
+        assert counts.get((1, 9)) == 2
+        # Tuesday = day 2
+        assert counts.get((2, 14)) == 1
+
+    def test_prepare_data_handles_sunday(self):
+        """Sunday is correctly mapped to day 0."""
+        sunday = datetime(2024, 1, 7, 10, 0).timestamp()  # Sunday
+        conversations = [{"create_time": sunday}]
+        result = HeatmapViz.prepare_data(conversations)
+
+        assert len(result["heatmap"]) == 1
+        assert result["heatmap"][0]["day"] == 0  # Sunday
+
+    def test_prepare_data_skips_invalid(self):
+        """Invalid timestamps are skipped."""
+        conversations = [
+            {"create_time": datetime(2024, 1, 8, 9, 0).timestamp()},
+            {"create_time": None},
+            {"other_field": "value"},
+        ]
+        result = HeatmapViz.prepare_data(conversations)
+        assert len(result["heatmap"]) == 1
+
+    def test_get_js_code_returns_string(self):
+        """JS code is returned as string."""
+        code = HeatmapViz.get_js_code()
+        assert isinstance(code, str)
+        assert len(code) > 100
+
+    def test_get_js_code_contains_d3_calls(self):
+        """JS code uses D3.js methods."""
+        code = HeatmapViz.get_js_code()
+        assert "d3.select" in code
+        assert "d3.scaleBand" in code
+        assert "d3.scaleSequential" in code
+
+    def test_get_js_code_creates_7x24_grid(self):
+        """JS code creates 7x24 grid structure."""
+        code = HeatmapViz.get_js_code()
+        assert "day < 7" in code
+        assert "hour < 24" in code
+
+    def test_get_js_code_references_data(self):
+        """JS code references DATA.heatmap."""
+        code = HeatmapViz.get_js_code()
+        assert "DATA.heatmap" in code
+
+
+class TestHeatmapIntegration:
+    """Integration tests for heatmap with ArtifactGenerator."""
+
+    def test_generate_html_with_heatmap(self, tmp_path):
+        """Heatmap can be integrated with ArtifactGenerator."""
+        generator = ArtifactGenerator(output_dir=tmp_path)
+
+        # Create sample data with varied times
+        import random
+        random.seed(42)
+        conversations = [
+            {"create_time": datetime(2024, 1, 1 + i % 28, random.randint(0, 23), random.randint(0, 59)).timestamp()}
+            for i in range(100)
+        ]
+        data = HeatmapViz.prepare_data(conversations)
+
+        path = generator.save_html(
+            filename="heatmap-test",
+            title="Usage Heatmap",
+            data=data,
+            visualization_code=HeatmapViz.get_js_code(),
+        )
+
+        assert path.exists()
+        content = path.read_text()
+        assert "Usage Heatmap" in content
+        assert '"heatmap"' in content

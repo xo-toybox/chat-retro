@@ -236,7 +236,7 @@
         "Shows time axis with correct date labels",
         "Data points correspond to conversation dates"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "viz-heatmap",

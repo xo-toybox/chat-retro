@@ -1,7 +1,7 @@
 # Progress
 
 ## Current Status
-Phase 6 complete. Ready for Phase 7 (system prompts) - Human Gate.
+Phase 7 complete. Ready for Phase 8 (integration test) - Human Gate.
 
 ## Completed Features
 - proj-setup: Fixed pyproject.toml, created package structure
@@ -19,6 +19,8 @@ Phase 6 complete. Ready for Phase 7 (system prompts) - Human Gate.
 - artifact-html-template: Self-contained HTML per ADR-003
 - artifact-d3-bundling: D3.js v7 minified (~280KB)
 - artifact-generator-class: ArtifactGenerator with generate_html/markdown
+- system-prompt: Agent persona from design doc 4.1
+- error-handling: USER_ERRORS dict for friendly messages
 
 ## Feature Summary
 - **Total**: 20 features
@@ -51,6 +53,7 @@ Phase 6 complete. Ready for Phase 7 (system prompts) - Human Gate.
 - Phase 4: Session manager (human gate approved)
 - Phase 5: CLI entry point (--help exits 0)
 - Phase 6: Artifact generator (14 tests passing)
+- Phase 7: System prompts (human gate approved)
 
 ## Decisions
 - Following impl-plan.md phases exactly

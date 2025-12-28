@@ -179,7 +179,7 @@
         "Prompt exists in prompts.py",
         "Covers role, tools, approach, constraints"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "error-handling",
@@ -190,7 +190,7 @@
         "USER_ERRORS dict exists with friendly messages",
         "RateLimiter class implemented"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "runtime-dirs",

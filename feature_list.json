@@ -2,8 +2,8 @@
   "meta": {
     "created": "2025-12-27",
     "spec_version": "1.0",
-    "design_version": "1.0",
-    "total_features": 20
+    "design_version": "2.0",
+    "total_features": 40
   },
   "features": [
     {
@@ -225,6 +225,246 @@
         "Agent correctly identifies format"
       ],
       "passes": true
+    },
+    {
+      "id": "viz-timeline",
+      "category": "visualization",
+      "priority": 21,
+      "description": "D3.js timeline visualization showing conversation frequency over time (line/area chart).",
+      "verification_steps": [
+        "HTML artifact renders in browser",
+        "Shows time axis with correct date labels",
+        "Data points correspond to conversation dates"
+      ],
+      "passes": false
+    },
+    {
+      "id": "viz-heatmap",
+      "category": "visualization",
+      "priority": 22,
+      "description": "D3.js heatmap showing usage patterns by hour and weekday (7x24 grid).",
+      "verification_steps": [
+        "Shows 7x24 grid with intensity coloring",
+        "Weekday and hour labels visible",
+        "Intensity corresponds to conversation frequency"
+      ],
+      "passes": false
+    },
+    {
+      "id": "viz-topic-clusters",
+      "category": "visualization",
+      "priority": 23,
+      "description": "D3.js force-directed graph showing topic clusters and relationships.",
+      "verification_steps": [
+        "Nodes are draggable",
+        "Clusters visually distinct",
+        "Links show topic relationships"
+      ],
+      "passes": false
+    },
+    {
+      "id": "viz-length-distribution",
+      "category": "visualization",
+      "priority": 24,
+      "description": "D3.js histogram showing distribution of conversation lengths.",
+      "verification_steps": [
+        "Bar chart with appropriate bins",
+        "Axis labels show message counts",
+        "Bins correspond to length ranges"
+      ],
+      "passes": false
+    },
+    {
+      "id": "agent-topic-extractor",
+      "category": "subagent",
+      "priority": 25,
+      "description": "Specialized subagent that extracts and clusters topics from conversations.",
+      "verification_steps": [
+        "AgentDefinition configured in agents.py",
+        "Returns structured topic list with confidence scores",
+        "Integrates with main session via Task tool"
+      ],
+      "passes": false
+    },
+    {
+      "id": "agent-sentiment-tracker",
+      "category": "subagent",
+      "priority": 26,
+      "description": "Specialized subagent that tracks emotional tone evolution across conversations.",
+      "verification_steps": [
+        "AgentDefinition configured in agents.py",
+        "Returns sentiment timeline data",
+        "Identifies emotional peaks and valleys"
+      ],
+      "passes": false
+    },
+    {
+      "id": "agent-pattern-detector",
+      "category": "subagent",
+      "priority": 27,
+      "description": "Specialized subagent that identifies prompting patterns and anti-patterns.",
+      "verification_steps": [
+        "AgentDefinition configured in agents.py",
+        "Returns pattern observations with examples",
+        "Flags potential anti-patterns"
+      ],
+      "passes": false
+    },
+    {
+      "id": "agent-temporal-analyst",
+      "category": "subagent",
+      "priority": 28,
+      "description": "Specialized subagent that analyzes time-based usage patterns.",
+      "verification_steps": [
+        "AgentDefinition configured in agents.py",
+        "Returns temporal insights (peak times, trends)",
+        "Correlates time with topics"
+      ],
+      "passes": false
+    },
+    {
+      "id": "insight-prompt-improvements",
+      "category": "insights",
+      "priority": 29,
+      "description": "Generate concrete suggestions for better prompting based on conversation analysis.",
+      "verification_steps": [
+        "Markdown output with before/after examples",
+        "Suggestions are specific and actionable",
+        "Based on actual conversation patterns"
+      ],
+      "passes": false
+    },
+    {
+      "id": "insight-repetition-detection",
+      "category": "insights",
+      "priority": 30,
+      "description": "Identify repetitive queries that could be templated or systematized.",
+      "verification_steps": [
+        "Returns list of repeated patterns",
+        "Groups similar queries together",
+        "Suggests templates for common patterns"
+      ],
+      "passes": false
+    },
+    {
+      "id": "insight-usage-optimization",
+      "category": "insights",
+      "priority": 31,
+      "description": "Generate time and context recommendations for optimal AI usage.",
+      "verification_steps": [
+        "Actionable bullet points",
+        "Based on temporal and success patterns",
+        "Specific to user's usage data"
+      ],
+      "passes": false
+    },
+    {
+      "id": "interact-filter-panel",
+      "category": "interactive",
+      "priority": 32,
+      "description": "Interactive filter panel in HTML artifacts for date range, topic, and sentiment filtering.",
+      "verification_steps": [
+        "Filter controls render in browser",
+        "Filters update visualization in real-time",
+        "Multiple filters can be combined"
+      ],
+      "passes": false
+    },
+    {
+      "id": "interact-search",
+      "category": "interactive",
+      "priority": 33,
+      "description": "Full-text search capability within HTML artifacts.",
+      "verification_steps": [
+        "Search box accepts input",
+        "Results highlight matching patterns",
+        "Search is performant on large datasets"
+      ],
+      "passes": false
+    },
+    {
+      "id": "interact-detail-view",
+      "category": "interactive",
+      "priority": 34,
+      "description": "Click pattern to see example conversations in modal or expandable detail view.",
+      "verification_steps": [
+        "Clicking pattern shows details",
+        "Modal or expansion works smoothly",
+        "Example conversations are readable"
+      ],
+      "passes": false
+    },
+    {
+      "id": "interact-annotations",
+      "category": "interactive",
+      "priority": 35,
+      "description": "User can add notes and annotations to patterns, persisted in localStorage.",
+      "verification_steps": [
+        "Annotation UI available on patterns",
+        "Notes persist across page reloads",
+        "Annotations visible in artifact"
+      ],
+      "passes": false
+    },
+    {
+      "id": "eval-quality-prompts",
+      "category": "eval",
+      "priority": 36,
+      "description": "After analysis, CLI asks targeted quality questions about insights and patterns.",
+      "verification_steps": [
+        "Quality prompts appear after analysis",
+        "User responses are captured",
+        "Questions are specific to generated output"
+      ],
+      "passes": false
+    },
+    {
+      "id": "eval-rating-system",
+      "category": "eval",
+      "priority": 37,
+      "description": "Rate patterns and insights with 1-5 scale or thumbs up/down.",
+      "verification_steps": [
+        "Rating UI available for patterns",
+        "Ratings persisted to state.json feedback section",
+        "Aggregate ratings accessible"
+      ],
+      "passes": false
+    },
+    {
+      "id": "eval-gap-detection",
+      "category": "eval",
+      "priority": 38,
+      "description": "User can flag 'I expected X but didn't see it' to identify missing features.",
+      "verification_steps": [
+        "Gap reporting mechanism available",
+        "Gaps logged for future improvement",
+        "Gap categories are structured"
+      ],
+      "passes": false
+    },
+    {
+      "id": "eval-feedback-aggregation",
+      "category": "eval",
+      "priority": 39,
+      "description": "Aggregate feedback across sessions for meta-analysis of tool effectiveness.",
+      "verification_steps": [
+        "Summary report generation available",
+        "Trends visible across sessions",
+        "Identifies consistently low-rated features"
+      ],
+      "passes": false
+    },
+    {
+      "id": "eval-issue-reporter",
+      "category": "eval",
+      "priority": 40,
+      "description": "Quick path to report bugs or issues directly from CLI.",
+      "verification_steps": [
+        "Issue reporting command available",
+        "Opens GitHub issue template or logs locally",
+        "Captures relevant context automatically"
+      ],
+      "passes": false
     }
   ]
 }

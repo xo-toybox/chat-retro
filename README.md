@@ -1,20 +1,30 @@
 # Chat Retrospective
 
-Explore your AI conversation history to surface patterns in what you reached for, how you framed problems, and what threads you kept returning to.
+Explore your AI conversation history with an agentic approach. The agent proposes patterns, you guide focus, output emerges from collaboration.
 
-## Documentation
+## Usage
 
-```
-docs/
-├── spec.md                     # What we're building
-├── design-review-checklist.md  # Review guide for design docs
-├── adr/                        # Why we made key decisions
-│   ├── 001-agentic-architecture.md
-│   ├── 002-local-state-only.md
-│   ├── 003-offline-artifacts.md
-│   └── 004-modal-data-safety.md
-└── design/
-    └── design.md               # How we're building it (derived)
+```bash
+uv sync
+uv run chat-retro ./conversations.json
+uv run chat-retro ./conversations.json --resume SESSION_ID
 ```
 
-**spec.md** and **adr/** are source of truth. **design/** is derived. Regenerate it from the spec when implementation approach changes.
+## How It Works
+
+Uses Claude Agent SDK with built-in tools (Read, Grep, Glob, Bash, Write, Edit). Agent explores raw JSON exports directly with no preprocessing. State persists locally in `state.json`. Generated artifacts are self-contained HTML with inlined D3.js.
+
+## Structure
+
+```
+src/chat_retro/
+├── __main__.py   # CLI entry point
+├── session.py    # Claude SDK wrapper, interaction loop
+├── state.py      # Pydantic models for state.json
+├── prompts.py    # System prompts
+├── artifacts.py  # HTML bundler with D3.js
+├── hooks.py      # Audit logging
+└── usage.py      # Token tracking
+```
+
+Runtime files: `state.json`, `.chat-retro/`, `outputs/`

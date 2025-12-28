@@ -2,64 +2,39 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
-
-Chat Retrospective is a personal analysis tool that explores exported AI conversation history (ChatGPT, Claude) using an agentic approach. The agent proposes patterns, the user guides focus, and output emerges from collaboration.
-
-**Current state**: Design phase. No implementation code yet.
-
 ## Commands
 
 ```bash
-# Package management
-uv sync                    # Install dependencies
-uv run python -m chat_retro ./conversations.json  # Run (once implemented)
-
-# Run single test
-uv run pytest tests/test_state.py -k test_name
-
-# Type checking
-uv run pyright
+uv sync                                        # Install dependencies
+uv run pytest tests/test_state.py -k test_name # Single test
+uv run pytest                                  # All tests
+uv run pyright                                 # Type check
 ```
 
 ## Architecture
 
-### Key Design Decisions (see docs/adr/)
-
-1. **Agentic over deterministic** (ADR-001): Uses Claude Agent SDK built-in tools (Read, Grep, Glob, Bash, Write, Edit, Task) directly on raw JSON exports. No custom MCP tools. Agent explores data with jq/grep rather than pre-processing.
-
-2. **Local state only** (ADR-002): All state stored in project directory (`./state.json`, `./.chat-retro/`). No Claude memory integration. User controls all derived data.
-
-3. **Self-contained artifacts** (ADR-003): HTML outputs inline all dependencies (D3.js ~250KB). No external network requests. Works offline forever.
-
-### Planned Structure
+### Data Flow
 
 ```
-src/chat_retro/
-├── cli.py          # Entry point, user interaction loop
-├── session.py      # ClaudeSDKClient wrapper, session resumption
-├── state.py        # Pydantic models for state.json
-├── hooks.py        # Audit logging, write protection
-├── artifacts.py    # HTML bundler with D3.js inlining
-└── prompts.py      # System prompts
+User input → SessionManager → ClaudeSDKClient → Agent explores export with built-in tools
+                                              → StateManager persists patterns to state.json
+                                              → ArtifactBuilder generates HTML to outputs/
 ```
 
-Custom code is ~400 lines. Everything else is SDK built-in tools.
+### Key Modules
 
-### Runtime Files (project-local)
+- `session.py:SessionManager` — Wraps ClaudeSDKClient, manages interaction loop
+- `state.py:AnalysisState` — Pydantic model with pattern merging and migration
+- `prompts.py:SYSTEM_PROMPT` — Agent instructions for analysis behavior
+- `artifacts.py` — HTML bundler that inlines D3.js
+- `hooks.py:HOOK_MATCHERS` — SDK hook configuration for audit logging
 
-```
-./state.json              # Analysis state (patterns, preferences)
-./.chat-retro/            # Sessions, audit logs
-./outputs/                # Generated artifacts
-```
+### Design Decisions (docs/adr/)
 
-## Documentation Hierarchy
+1. **Agentic over deterministic** (ADR-001): SDK built-in tools on raw exports. No custom MCP tools.
+2. **Local state only** (ADR-002): All state in project directory. No Claude memory integration.
+3. **Self-contained artifacts** (ADR-003): HTML outputs inline D3.js. No network requests.
 
-- `docs/spec.md` - What we're building (source of truth)
-- `docs/adr/` - Why decisions were made (source of truth)
-- `docs/design/` - How we're building it (derived from spec, regenerate if approach changes)
+## Development Principle
 
-## Development Principles
-
-From spec.md: "Measure before changing." Optimizations, caching, quality improvements require data, not intuition. Agent output is non-deterministic—"it seems better" is not evidence.
+"Measure before changing." Agent output is non-deterministic. "it seems better" is not evidence.

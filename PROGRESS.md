@@ -1,9 +1,16 @@
 # Progress
 
 ## Current Status
-**ALL PHASES COMPLETE.** Project ready for use.
+**v2 iteration started.** Phases 1-8 complete (20/40 features). Working on phases 9-13.
 
-## Completed Features
+## v2 Features (pending)
+- viz-timeline, viz-heatmap, viz-topic-clusters, viz-length-distribution (Phase 9)
+- agent-topic-extractor, agent-sentiment-tracker, agent-pattern-detector, agent-temporal-analyst (Phase 10)
+- insight-prompt-improvements, insight-repetition-detection, insight-usage-optimization (Phase 11)
+- interact-filter-panel, interact-search, interact-detail-view, interact-annotations (Phase 12)
+- eval-quality-prompts, eval-rating-system, eval-gap-detection, eval-feedback-aggregation, eval-issue-reporter (Phase 13)
+
+## v1 Completed Features
 - proj-setup: Fixed pyproject.toml, created package structure
 - state-models: Pydantic models (AnalysisState, StateMeta, Pattern, etc.)
 - state-manager: StateManager with load/save/merge, atomic writes, corruption recovery
@@ -34,16 +41,26 @@
 ## Phases (from impl-plan.md)
 | # | Phase | Type | Features | Status |
 |---|-------|------|----------|--------|
-| 1 | Project setup | Mechanical | proj-setup | pending |
-| 2 | State schema | Ralph-able | state-models, state-manager | pending |
-| 3 | Hooks | Ralph-able | hook-* (3 features) | pending |
-| 4 | Session manager | Human gate | session-* (3 features), usage-report | pending |
-| 5 | CLI entry point | Ralph-able | cli-* (2 features) | pending |
-| 6 | Artifact generator | Ralph-able | artifact-* (3 features) | pending |
-| 7 | System prompts | Human gate | system-prompt, error-handling | pending |
-| 8 | Integration test | Human gate | integration-test, claude-export-format, runtime-dirs | pending |
+| 1 | Project setup | Mechanical | proj-setup | done |
+| 2 | State schema | Ralph-able | state-models, state-manager | done |
+| 3 | Hooks | Ralph-able | hook-* (3 features) | done |
+| 4 | Session manager | Human gate | session-* (3 features), usage-report | done |
+| 5 | CLI entry point | Ralph-able | cli-* (2 features) | done |
+| 6 | Artifact generator | Ralph-able | artifact-* (3 features) | done |
+| 7 | System prompts | Human gate | system-prompt, error-handling | done |
+| 8 | Integration test | Human gate | integration-test, claude-export-format, runtime-dirs | done |
+| 9 | Visualization templates | Ralph-able | viz-* (4 features) | pending |
+| 10 | Analysis subagents | Human gate | agent-* (4 features) | pending |
+| 11 | Actionable insights | Human gate | insight-* (3 features) | pending |
+| 12 | Interactive artifacts | Ralph-able | interact-* (4 features) | pending |
+| 13 | Question-based eval | Human gate | eval-* (5 features) | pending |
 
 ## Session Log
+### Session 2 (2025-12-27) - v2 Init
+- Added phases 9-13 with 20 new features
+- Updated impl-plan.md, feature_list.json, PROGRESS.md
+- Focus: Visualizations, Subagents, Insights, Interactivity, Eval
+
 ### Session 1 (2025-12-27)
 - Initialized project structure
 - Read all documentation (spec.md, design.md, impl-plan.md, ADRs 001-003)

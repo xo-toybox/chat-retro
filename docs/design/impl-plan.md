@@ -20,14 +20,19 @@ status: approved
 
 | # | Phase | Type | Mode | Status |
 |---|-------|------|------|--------|
-| 1 | Project setup | Mechanical | Direct | pending |
-| 2 | State schema | Mechanical | Ralph | pending |
-| 3 | Hooks | Mechanical | Ralph | pending |
-| 4 | Session manager | **Judgment** | Human gate | pending |
-| 5 | CLI entry point | Mechanical | Ralph | pending |
-| 6 | Artifact generator | Mechanical | Ralph | pending |
-| 7 | System prompts | **Judgment** | Human gate | pending |
-| 8 | Integration test | **Judgment** | Human gate | pending |
+| 1 | Project setup | Mechanical | Direct | done |
+| 2 | State schema | Mechanical | Ralph | done |
+| 3 | Hooks | Mechanical | Ralph | done |
+| 4 | Session manager | **Judgment** | Human gate | done |
+| 5 | CLI entry point | Mechanical | Ralph | done |
+| 6 | Artifact generator | Mechanical | Ralph | done |
+| 7 | System prompts | **Judgment** | Human gate | done |
+| 8 | Integration test | **Judgment** | Human gate | done |
+| 9 | Visualization templates | Mechanical | Ralph | pending |
+| 10 | Analysis subagents | **Judgment** | Human gate | pending |
+| 11 | Actionable insights | **Judgment** | Human gate | pending |
+| 12 | Interactive artifacts | Mechanical | Ralph | pending |
+| 13 | Question-based eval | **Judgment** | Human gate | pending |
 
 ## Feature List
 
@@ -85,15 +90,59 @@ Features tracked in `feature_list.json`. Each feature has verification steps and
 | integration-test | E2E with sample export | State saves, artifact renders |
 | claude-export-format | Support Claude export format | Agent identifies format correctly |
 
-**Total: 20 features**
+### Phase 9: Visualization templates
+| ID | Description | Verification |
+|----|-------------|--------------|
+| viz-timeline | Conversation frequency over time (line/area chart) | HTML renders, shows time axis |
+| viz-heatmap | Usage by hour/weekday (heatmap grid) | Shows 7×24 grid with intensity |
+| viz-topic-clusters | Force-directed topic graph | Nodes draggable, clusters visible |
+| viz-length-distribution | Histogram of conversation lengths | Bar chart with bins |
+
+### Phase 10: Analysis subagents
+| ID | Description | Verification |
+|----|-------------|--------------|
+| agent-topic-extractor | Extract and cluster topics from conversations | Agent returns structured topic list |
+| agent-sentiment-tracker | Track emotional tone evolution | Agent returns sentiment timeline |
+| agent-pattern-detector | Identify prompting patterns and anti-patterns | Agent returns pattern observations |
+| agent-temporal-analyst | Time-based usage patterns | Agent returns temporal insights |
+
+### Phase 11: Actionable insights
+| ID | Description | Verification |
+|----|-------------|--------------|
+| insight-prompt-improvements | Suggestions for better prompting | Markdown output with before/after |
+| insight-repetition-detection | Identify repetitive queries to template | List of repeated patterns |
+| insight-usage-optimization | Time/context recommendations | Actionable bullet points |
+
+### Phase 12: Interactive artifacts
+| ID | Description | Verification |
+|----|-------------|--------------|
+| interact-filter-panel | Filter by date range, topic, sentiment | Filter controls work in browser |
+| interact-search | Full-text search within artifact | Search box returns results |
+| interact-detail-view | Click pattern → see example conversations | Modal or expandable details |
+| interact-annotations | User can add notes to patterns | Notes persist in localStorage |
+
+### Phase 13: Question-based eval
+| ID | Description | Verification |
+|----|-------------|--------------|
+| eval-quality-prompts | After analysis, ask targeted questions | Prompts appear, responses captured |
+| eval-rating-system | Rate patterns/insights (1-5 or thumbs) | Ratings persisted to state.json |
+| eval-gap-detection | User flags missing expected features | Gaps logged for improvement |
+| eval-feedback-aggregation | Aggregate feedback across sessions | Summary report available |
+| eval-issue-reporter | Quick path to report bugs/issues | Opens issue template or logs locally |
+
+**Total: 40 features (20 v1 + 20 v2)**
 
 ## Human Gates
 
 | After Phase | What's Needed |
 |-------------|---------------|
-| Phase 4 | Review session.py - SDK usage correct? Error handling OK? |
 | Phase 7 | Review system prompt - Agent persona matches vision? |
 | Phase 8 | Integration test - Experience feels like "working with an analyst"? |
+| Phase 9 | Do visualizations look good? Render correctly in browser? |
+| Phase 10 | Are subagent outputs useful? Accurate analysis? |
+| Phase 11 | Are insights actionable? Not generic fluff? |
+| Phase 12 | Does interactivity feel natural? Performant? |
+| Phase 13 | Does eval flow feel natural? Is feedback useful for iteration? |
 
 ## Ralph Configurations
 
@@ -103,17 +152,14 @@ Features tracked in `feature_list.json`. Each feature has verification steps and
 | 3 | `uv run pytest tests/test_hooks.py` exits 0 | 10 |
 | 5 | `uv run python -m chat_retro --help` exits 0 | 10 |
 | 6 | `uv run pytest tests/test_artifacts.py` exits 0 | 10 |
+| 9 | `uv run pytest tests/test_viz.py` exits 0 | 10 |
+| 12 | `uv run pytest tests/test_interactive.py` exits 0 | 10 |
 
-## Risks & Mitigations
-
-| Risk | Mitigation |
-|------|------------|
-| Claude Agent SDK API differs from design doc | Phase 4 is human gate; verify SDK docs first |
-| D3.js bundling complexity | Start simple inline, iterate |
-| pyproject.toml has wrong deps | Phase 1 fixes first |
 
 ## Progress Log
 
 | Date | Phase | Notes |
 |------|-------|-------|
 | 2025-12-27 | Init | Created scaffolding: feature_list.json, PROGRESS.md, init.sh |
+| 2025-12-27 | 1-8 | v1 complete: all 20 features passing |
+| 2025-12-27 | v2 Init | Added phases 9-13 (21 features) for functional expansion |

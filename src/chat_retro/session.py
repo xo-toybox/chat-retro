@@ -107,6 +107,7 @@ class SessionManager:
 
                 # Initial query
                 initial_prompt = f"Analyze the conversation export at {self.export_path}"
+                self.session.usage.start_turn()
                 await client.query(initial_prompt)
 
                 # Process initial response
@@ -116,13 +117,15 @@ class SessionManager:
                     elif isinstance(msg, ResultMessage):
                         self.session.session_id = msg.session_id
                         self.session.usage.update_from_result(msg)
+                        self.session.usage.end_turn()
                         self._save_session_id(msg.session_id)
 
                 # Interactive loop
                 while True:
                     try:
                         user_input = input("\nYou: ").strip()
-                    except EOFError:
+                    except (EOFError, KeyboardInterrupt):
+                        print()  # Newline after ^C
                         break
 
                     if not user_input:
@@ -132,6 +135,7 @@ class SessionManager:
                         print("\nEnding session.")
                         break
 
+                    self.session.usage.start_turn()
                     await client.query(user_input)
 
                     async for msg in client.receive_response():
@@ -139,18 +143,29 @@ class SessionManager:
                             self._display_message(msg)
                         elif isinstance(msg, ResultMessage):
                             self.session.usage.update_from_result(msg)
+                            self.session.usage.end_turn()
 
-        except CLINotFoundError:
+        except CLINotFoundError as e:
+            self.session.usage.record_error(e)
             print(USER_ERRORS[CLINotFoundError], file=sys.stderr)
             raise
-        except ProcessError:
+        except ProcessError as e:
+            self.session.usage.record_error(e)
             print(USER_ERRORS[ProcessError], file=sys.stderr)
             raise
         finally:
             self._client = None
+            self._save_metrics()
 
         # Print final usage
         print(f"\n{self.session.usage.summary()}")
+
+    def _save_metrics(self) -> None:
+        """Persist metrics to a JSONL file for later analysis."""
+        metrics_file = Path(".chat-retro/metrics.jsonl")
+        metrics_file.parent.mkdir(parents=True, exist_ok=True)
+        with metrics_file.open("a") as f:
+            f.write(json.dumps(self.session.usage.detailed_summary()) + "\n")
 
     async def interrupt(self) -> None:
         """Interrupt current agent execution."""

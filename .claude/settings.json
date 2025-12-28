@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv run python:*)",
+      "WebFetch(domain:www.anthropic.com)",
+      "WebSearch",
+      "Bash(uv pip index:*)",
+      "Bash(pip index:*)",
+      "Bash(curl:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(uv run pytest:*)",
+      "Bash(uv sync:*)",
+      "Bash(echo:*)",
+      "Bash(uv run pyright:*)",
+      "Skill(implement)",
+      "Bash(find:*)",
+      "Bash(xargs:*)"
+    ]
+  },
+  "enabledPlugins": {
+    "ralph-wiggum@claude-plugins-official": true
+  }
+}

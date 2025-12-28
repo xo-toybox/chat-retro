@@ -1,5 +1,6 @@
-# ignore until stable
-.claude/
+# Claude Code (allow shared settings)
+.claude/*
+!.claude/settings.json
 
 # Python-generated files
 __pycache__/

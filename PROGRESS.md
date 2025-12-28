@@ -1,12 +1,15 @@
 # Progress
 
 ## Current Status
-Phase 2 complete. Ready for Phase 3 (hooks).
+Phase 3 complete. Ready for Phase 4 (session manager) - Human Gate.
 
 ## Completed Features
 - proj-setup: Fixed pyproject.toml, created package structure
 - state-models: Pydantic models (AnalysisState, StateMeta, Pattern, etc.)
 - state-manager: StateManager with load/save/merge, atomic writes, corruption recovery
+- hook-audit-logger: Privacy-safe tool usage logging
+- hook-block-writes: Write protection for allowed paths only
+- hook-state-mutation: Edit tracking on state.json
 
 ## Feature Summary
 - **Total**: 20 features
@@ -35,6 +38,7 @@ Phase 2 complete. Ready for Phase 3 (hooks).
 - Created init.sh
 - Phase 1: Fixed pyproject.toml (claude-code-sdk>=0.0.25), created src/chat_retro/, tests/
 - Phase 2: State schema (16 tests passing)
+- Phase 3: Hooks (22 tests passing)
 
 ## Decisions
 - Following impl-plan.md phases exactly

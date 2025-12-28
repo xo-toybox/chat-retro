@@ -49,7 +49,7 @@
         "Hook function exists and is callable",
         "Returns expected output format per SDK spec"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "hook-block-writes",
@@ -60,7 +60,7 @@
         "Returns deny for paths outside allowed prefixes",
         "Returns empty dict for allowed paths"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "hook-state-mutation",
@@ -70,7 +70,7 @@
       "verification_steps": [
         "uv run pytest tests/test_hooks.py exits 0"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "usage-report",

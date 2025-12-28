@@ -1,6 +1,5 @@
 """Usage tracking for chat-retro sessions."""
 
-from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
@@ -46,7 +45,7 @@ class UsageReport:
     _processed_ids: set[str] = field(default_factory=set, repr=False)
     _turn_start: float | None = field(default=None, repr=False)
 
-    def update_from_result(self, msg: ResultMessage) -> None:
+    def update_from_result(self, msg: "ResultMessage") -> None:
         """Update from ResultMessage (contains cumulative totals).
 
         Note: Multiple messages with same session_id report identical usage,

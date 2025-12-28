@@ -1,7 +1,5 @@
 """Tests for subagent definitions."""
 
-from __future__ import annotations
-
 import pytest
 from chat_retro.agents import (
     AgentDefinition,
@@ -10,6 +8,10 @@ from chat_retro.agents import (
     SENTIMENT_TRACKER,
     PATTERN_DETECTOR,
     TEMPORAL_ANALYST,
+    TOPIC_SCHEMA,
+    SENTIMENT_SCHEMA,
+    PATTERN_SCHEMA,
+    TEMPORAL_SCHEMA,
     get_agents_dict,
 )
 
@@ -56,6 +58,31 @@ class TestAgentDefinition:
             "model": "opus",
         }
 
+    def test_to_dict_with_schema(self):
+        """to_dict includes output_schema when provided."""
+        schema = {"type": "object", "properties": {"foo": {"type": "string"}}}
+        agent = AgentDefinition(
+            description="Test",
+            prompt="Test",
+            tools=[],
+            output_schema=schema,
+        )
+        result = agent.to_dict()
+
+        assert "output_schema" in result
+        assert result["output_schema"] == schema
+
+    def test_to_dict_without_schema(self):
+        """to_dict omits output_schema when None."""
+        agent = AgentDefinition(
+            description="Test",
+            prompt="Test",
+            tools=[],
+        )
+        result = agent.to_dict()
+
+        assert "output_schema" not in result
+
 
 class TestTopicExtractor:
     """Tests for topic-extractor agent."""
@@ -72,11 +99,15 @@ class TestTopicExtractor:
         assert "topic" in TOPIC_EXTRACTOR.description.lower()
         assert "extract" in TOPIC_EXTRACTOR.description.lower() or "cluster" in TOPIC_EXTRACTOR.description.lower()
 
-    def test_prompt_contains_output_format(self):
-        """Prompt specifies structured output format."""
-        assert "topics" in TOPIC_EXTRACTOR.prompt
-        assert "confidence" in TOPIC_EXTRACTOR.prompt
-        assert "JSON" in TOPIC_EXTRACTOR.prompt
+    def test_has_output_schema(self):
+        """Topic extractor has structured output schema."""
+        assert TOPIC_EXTRACTOR.output_schema is not None
+        assert TOPIC_EXTRACTOR.output_schema == TOPIC_SCHEMA
+
+    def test_schema_has_required_fields(self):
+        """Schema requires topics array."""
+        assert "topics" in TOPIC_SCHEMA["required"]
+        assert TOPIC_SCHEMA["properties"]["topics"]["type"] == "array"
 
     def test_has_file_reading_tools(self):
         """Topic extractor can read files."""
@@ -102,15 +133,14 @@ class TestSentimentTracker:
         """Description explains sentiment analysis."""
         assert "sentiment" in SENTIMENT_TRACKER.description.lower() or "emotion" in SENTIMENT_TRACKER.description.lower()
 
-    def test_prompt_contains_output_format(self):
-        """Prompt specifies structured output format."""
-        assert "overall_sentiment" in SENTIMENT_TRACKER.prompt or "score" in SENTIMENT_TRACKER.prompt
-        assert "timeline" in SENTIMENT_TRACKER.prompt
-        assert "JSON" in SENTIMENT_TRACKER.prompt
+    def test_has_output_schema(self):
+        """Sentiment tracker has structured output schema."""
+        assert SENTIMENT_TRACKER.output_schema is not None
+        assert SENTIMENT_TRACKER.output_schema == SENTIMENT_SCHEMA
 
-    def test_identifies_peaks(self):
-        """Prompt asks for peak identification."""
-        assert "peak" in SENTIMENT_TRACKER.prompt.lower()
+    def test_schema_has_required_fields(self):
+        """Schema requires overall_sentiment."""
+        assert "overall_sentiment" in SENTIMENT_SCHEMA["required"]
 
 
 class TestPatternDetector:
@@ -127,13 +157,16 @@ class TestPatternDetector:
         """Description explains pattern detection."""
         assert "pattern" in PATTERN_DETECTOR.description.lower()
 
-    def test_prompt_identifies_antipatterns(self):
-        """Prompt asks for anti-pattern identification."""
-        assert "anti_pattern" in PATTERN_DETECTOR.prompt or "anti-pattern" in PATTERN_DETECTOR.prompt.lower()
+    def test_has_output_schema(self):
+        """Pattern detector has structured output schema."""
+        assert PATTERN_DETECTOR.output_schema is not None
+        assert PATTERN_DETECTOR.output_schema == PATTERN_SCHEMA
 
-    def test_prompt_contains_recommendations(self):
-        """Prompt asks for recommendations."""
-        assert "recommendation" in PATTERN_DETECTOR.prompt.lower() or "suggestion" in PATTERN_DETECTOR.prompt.lower()
+    def test_schema_has_required_fields(self):
+        """Schema requires patterns and recommendations."""
+        assert "effective_patterns" in PATTERN_SCHEMA["required"]
+        assert "anti_patterns" in PATTERN_SCHEMA["required"]
+        assert "recommendations" in PATTERN_SCHEMA["required"]
 
 
 class TestTemporalAnalyst:
@@ -152,8 +185,8 @@ class TestTemporalAnalyst:
 
     def test_prompt_analyzes_patterns(self):
         """Prompt asks for time-based patterns."""
-        assert "peak" in TEMPORAL_ANALYST.prompt.lower()
-        assert "pattern" in TEMPORAL_ANALYST.prompt.lower()
+        assert "usage patterns" in TEMPORAL_ANALYST.prompt.lower()
+        assert "trend" in TEMPORAL_ANALYST.prompt.lower()
 
     def test_uses_efficient_model(self):
         """Uses lighter model for metadata analysis."""

@@ -1,6 +1,5 @@
 """Artifact generation for chat-retro outputs."""
 
-from __future__ import annotations
 
 import json
 from datetime import datetime

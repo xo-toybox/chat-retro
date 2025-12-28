@@ -1,6 +1,5 @@
 """Tests for visualization templates."""
 
-from __future__ import annotations
 
 import pytest
 from datetime import datetime

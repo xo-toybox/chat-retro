@@ -2,12 +2,176 @@
 
 These agents are invoked by the main agent via the Task tool
 to perform focused analysis while preserving main context.
+
+Uses Pydantic models to define structured output schemas.
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
+
+from pydantic import BaseModel, Field
+
+
+# ============================================================================
+# Pydantic models for structured outputs
+# ============================================================================
+
+
+class Topic(BaseModel):
+    """A topic extracted from conversations."""
+
+    label: str
+    confidence: float = Field(ge=0, le=1)
+    description: str | None = None
+    keywords: list[str] = Field(default_factory=list)
+    conversation_ids: list[str] = Field(default_factory=list)
+    subtopics: list[str] = Field(default_factory=list)
+
+
+class TopicCluster(BaseModel):
+    """A cluster of related topics."""
+
+    name: str
+    topics: list[str]
+    relationship: str | None = None
+
+
+class TopicOutput(BaseModel):
+    """Output schema for topic extraction."""
+
+    topics: list[Topic]
+    clusters: list[TopicCluster] = Field(default_factory=list)
+
+
+class OverallSentiment(BaseModel):
+    """Overall sentiment assessment."""
+
+    score: float = Field(ge=-1, le=1)
+    label: str
+    confidence: float | None = Field(default=None, ge=0, le=1)
+
+
+class SentimentPeriod(BaseModel):
+    """Sentiment for a time period."""
+
+    period: str
+    score: float
+    notable_events: list[str] = Field(default_factory=list)
+
+
+class SentimentPeak(BaseModel):
+    """A peak in sentiment (positive or negative)."""
+
+    type: Literal["positive", "negative"]
+    trigger: str
+    conversation_id: str | None = None
+    intensity: float | None = None
+
+
+class SentimentOutput(BaseModel):
+    """Output schema for sentiment tracking."""
+
+    overall_sentiment: OverallSentiment
+    timeline: list[SentimentPeriod] = Field(default_factory=list)
+    peaks: list[SentimentPeak] = Field(default_factory=list)
+    patterns: list[str] = Field(default_factory=list)
+
+
+class EffectivePattern(BaseModel):
+    """An effective prompting pattern."""
+
+    name: str
+    description: str
+    examples: list[str] = Field(default_factory=list)
+    frequency: int | None = None
+    effectiveness: float | None = None
+
+
+class AntiPattern(BaseModel):
+    """A prompting anti-pattern to avoid."""
+
+    name: str
+    description: str
+    suggestion: str
+    examples: list[str] = Field(default_factory=list)
+    frequency: int | None = None
+    impact: str | None = None
+
+
+class Habit(BaseModel):
+    """A user habit observation."""
+
+    habit: str
+    assessment: Literal["beneficial", "neutral", "harmful"]
+    frequency: Literal["often", "sometimes", "rarely"] | None = None
+
+
+class PatternOutput(BaseModel):
+    """Output schema for pattern detection."""
+
+    effective_patterns: list[EffectivePattern]
+    anti_patterns: list[AntiPattern]
+    recommendations: list[str]
+    habits: list[Habit] = Field(default_factory=list)
+
+
+class UsagePatterns(BaseModel):
+    """Usage patterns by time."""
+
+    peak_hours: list[int] = Field(default_factory=list)
+    peak_days: list[str] = Field(default_factory=list)
+    quiet_periods: list[str] = Field(default_factory=list)
+    average_daily: float | None = None
+
+
+class Trend(BaseModel):
+    """A usage trend over time."""
+
+    period: str
+    direction: Literal["increasing", "decreasing", "stable"]
+    magnitude: float | None = None
+    notes: str | None = None
+
+
+class Burst(BaseModel):
+    """A burst of activity."""
+
+    start_date: str
+    intensity: float
+    end_date: str | None = None
+    likely_cause: str | None = None
+
+
+class TopicTimeCorrelation(BaseModel):
+    """Correlation between topic and time."""
+
+    topic: str
+    pattern: str
+    peak_time: str | None = None
+
+
+class TemporalOutput(BaseModel):
+    """Output schema for temporal analysis."""
+
+    usage_patterns: UsagePatterns
+    trends: list[Trend] = Field(default_factory=list)
+    bursts: list[Burst] = Field(default_factory=list)
+    topic_time_correlation: list[TopicTimeCorrelation] = Field(default_factory=list)
+
+
+# ============================================================================
+# Generate JSON Schemas from Pydantic models
+# ============================================================================
+
+TOPIC_SCHEMA: dict[str, Any] = TopicOutput.model_json_schema()
+SENTIMENT_SCHEMA: dict[str, Any] = SentimentOutput.model_json_schema()
+PATTERN_SCHEMA: dict[str, Any] = PatternOutput.model_json_schema()
+TEMPORAL_SCHEMA: dict[str, Any] = TemporalOutput.model_json_schema()
+
+
+# ============================================================================
+# Agent definitions
+# ============================================================================
 
 
 @dataclass
@@ -16,21 +180,27 @@ class AgentDefinition:
 
     Mirrors the claude_code_sdk.AgentDefinition interface for use
     with ClaudeCodeOptions(agents={...}).
+
+    Uses output_schema to enforce structured JSON responses.
     """
 
     description: str
     prompt: str
     tools: list[str]
     model: str = "sonnet"
+    output_schema: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dict for SDK consumption."""
-        return {
+        result = {
             "description": self.description,
             "prompt": self.prompt,
             "tools": self.tools,
             "model": self.model,
         }
+        if self.output_schema:
+            result["output_schema"] = self.output_schema
+        return result
 
 
 # Topic extraction subagent
@@ -44,30 +214,11 @@ Your task:
 3. Cluster related topics together
 4. Assign confidence scores based on evidence strength
 
-Output format (JSON):
-{
-    "topics": [
-        {
-            "label": "Topic Name",
-            "description": "Brief description of this topic",
-            "keywords": ["keyword1", "keyword2"],
-            "conversation_ids": ["conv_id1", "conv_id2"],
-            "confidence": 0.85,
-            "subtopics": ["subtopic1", "subtopic2"]
-        }
-    ],
-    "clusters": [
-        {
-            "name": "Cluster Name",
-            "topics": ["Topic1", "Topic2"],
-            "relationship": "Description of how these topics relate"
-        }
-    ]
-}
-
-Be thorough but avoid over-extraction. Focus on meaningful, recurring themes.""",
+Be thorough but avoid over-extraction. Focus on meaningful, recurring themes.
+Your response must conform to the output schema.""",
     tools=["Read", "Grep", "Glob"],
     model="sonnet",
+    output_schema=TOPIC_SCHEMA,
 )
 
 
@@ -82,37 +233,11 @@ Your task:
 3. Note peaks (very positive/negative) and their context
 4. Track satisfaction patterns
 
-Output format (JSON):
-{
-    "overall_sentiment": {
-        "score": 0.6,  // -1.0 to 1.0
-        "label": "moderately positive",
-        "confidence": 0.8
-    },
-    "timeline": [
-        {
-            "period": "2024-01",
-            "score": 0.7,
-            "notable_events": ["Positive: successful debugging session"]
-        }
-    ],
-    "peaks": [
-        {
-            "type": "positive" | "negative",
-            "conversation_id": "conv_id",
-            "trigger": "Description of what caused this peak",
-            "intensity": 0.9
-        }
-    ],
-    "patterns": [
-        "User tends to be more frustrated during debugging",
-        "Positive sentiment correlates with successful code completion"
-    ]
-}
-
-Focus on patterns, not individual message sentiment.""",
+Focus on patterns, not individual message sentiment.
+Your response must conform to the output schema.""",
     tools=["Read", "Grep"],
     model="sonnet",
+    output_schema=SENTIMENT_SCHEMA,
 )
 
 
@@ -127,42 +252,11 @@ Your task:
 3. Note effective techniques the user employs
 4. Suggest improvements based on observed patterns
 
-Output format (JSON):
-{
-    "effective_patterns": [
-        {
-            "name": "Pattern Name",
-            "description": "How the user employs this pattern",
-            "examples": ["Brief example 1", "Brief example 2"],
-            "frequency": 15,
-            "effectiveness": 0.9
-        }
-    ],
-    "anti_patterns": [
-        {
-            "name": "Anti-Pattern Name",
-            "description": "What the user does that's ineffective",
-            "examples": ["Brief example"],
-            "frequency": 5,
-            "impact": "Leads to clarification loops",
-            "suggestion": "How to improve"
-        }
-    ],
-    "habits": [
-        {
-            "habit": "Description of observed habit",
-            "frequency": "often" | "sometimes" | "rarely",
-            "assessment": "beneficial" | "neutral" | "harmful"
-        }
-    ],
-    "recommendations": [
-        "Specific, actionable recommendation based on patterns"
-    ]
-}
-
-Be constructive. Focus on patterns with improvement potential.""",
+Be constructive. Focus on patterns with improvement potential.
+Your response must conform to the output schema.""",
     tools=["Read", "Grep", "Glob"],
     model="sonnet",
+    output_schema=PATTERN_SCHEMA,
 )
 
 
@@ -177,42 +271,11 @@ Your task:
 3. Correlate time patterns with topics
 4. Detect trends and seasonality
 
-Output format (JSON):
-{
-    "usage_patterns": {
-        "peak_hours": [9, 10, 14, 15],
-        "peak_days": ["Tuesday", "Wednesday"],
-        "quiet_periods": ["Weekends", "Early morning"],
-        "average_daily": 3.5
-    },
-    "trends": [
-        {
-            "period": "2024-Q1 to 2024-Q2",
-            "direction": "increasing" | "decreasing" | "stable",
-            "magnitude": 0.25,  // percentage change
-            "notes": "Usage increased after starting new project"
-        }
-    ],
-    "bursts": [
-        {
-            "start_date": "2024-03-15",
-            "end_date": "2024-03-18",
-            "intensity": 3.5,  // multiplier vs average
-            "likely_cause": "Project deadline"
-        }
-    ],
-    "topic_time_correlation": [
-        {
-            "topic": "Debugging",
-            "peak_time": "afternoon",
-            "pattern": "More debugging queries later in the day"
-        }
-    ]
-}
-
-Use conversation timestamps to identify patterns. Be specific about dates.""",
+Use conversation timestamps to identify patterns. Be specific about dates.
+Your response must conform to the output schema.""",
     tools=["Read", "Grep"],
     model="haiku",  # Lighter model for metadata analysis
+    output_schema=TEMPORAL_SCHEMA,
 )
 
 

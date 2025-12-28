@@ -1,6 +1,5 @@
 """CLI entry point for chat-retro."""
 
-from __future__ import annotations
 
 import argparse
 import asyncio

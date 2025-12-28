@@ -67,6 +67,13 @@
 | 13 | Question-based eval | Human gate | eval-* (5 features) | pending |
 
 ## Session Log
+### Session 5 (2025-12-27) - Pydantic Schema Refactor
+- Refactored agents.py to use Pydantic models for structured output schemas
+- 16 Pydantic models: Topic, TopicOutput, SentimentOutput, PatternOutput, etc.
+- JSON Schemas derived via `.model_json_schema()` (modern best practice)
+- Removed obsolete `from __future__ import annotations` from all files
+- 140 tests passing
+
 ### Session 4 (2025-12-27) - Phase 10 Complete
 - Created agents.py with 4 subagent definitions
 - AgentDefinition dataclass for SDK compatibility
@@ -103,6 +110,8 @@
 - Following impl-plan.md phases exactly
 - Ralph-able phases have clear test completion criteria
 - Human gates at phases 4, 7, 8 for judgment work
+- Python 3.12+ only: no `from __future__ import annotations` needed
+- Pydantic models for structured output schemas (derive JSON Schema from models)
 
 ## Open Questions
 None yet.

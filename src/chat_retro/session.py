@@ -1,6 +1,5 @@
 """Session management for chat-retro."""
 
-from __future__ import annotations
 
 import json
 import sys

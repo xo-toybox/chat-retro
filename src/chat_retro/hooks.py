@@ -1,6 +1,5 @@
 """Hooks for audit logging, write protection, and state mutation tracking."""
 
-from __future__ import annotations
 
 import hashlib
 import json

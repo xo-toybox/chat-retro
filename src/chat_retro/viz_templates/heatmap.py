@@ -1,6 +1,5 @@
 """Heatmap visualization: usage by hour and weekday."""
 
-from __future__ import annotations
 
 from datetime import datetime
 from typing import Any

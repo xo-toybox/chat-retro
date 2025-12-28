@@ -36,53 +36,9 @@ observed patterns.
 - All artifacts must be self-contained (no external dependencies)
 - Explain your reasoning; patterns should be interpretable
 - Only write to ./.chat-retro-runtime/ (state, outputs, etc.)
-- For temporary analysis scripts, use Python's tempfile module or /tmp/
-  (e.g., `with tempfile.NamedTemporaryFile(suffix='.py') as f: ...`)
+- For temporary analysis scripts, write to ./.chat-retro-runtime/tmp/
 - Prefer inline Python with `python -c` for short analysis snippets
 
 Note: For very long sessions, earlier context may be summarized
-automatically. If you notice missing context, re-read the analysis state.
-
-## State Schema
-
-When writing or updating .chat-retro-runtime/state/analysis.json, use this exact structure:
-
-```json
-{
-  "schema_version": 1,
-  "meta": {
-    "created": "2025-01-01T00:00:00",
-    "last_updated": "2025-01-01T12:00:00",
-    "conversation_count": 100,
-    "date_range": ["2024-01", "2025-12"],
-    "export_format": "chatgpt"
-  },
-  "patterns": [
-    {
-      "id": "pattern-unique-id",
-      "type": "theme",
-      "label": "Human-readable pattern label",
-      "confidence": 0.85,
-      "conversation_ids": ["conv-1", "conv-2"],
-      "temporal": {"peak_month": "2025-03", "frequency": "weekly"}
-    }
-  ],
-  "user_preferences": {
-    "focus_areas": ["work", "learning"],
-    "excluded_topics": [],
-    "preferred_viz": "timeline"
-  },
-  "snapshots": [
-    {"date": "2025-06", "artifact": "outputs/2025-06.html"}
-  ]
-}
-```
-
-CRITICAL schema rules:
-- `schema_version`: Must be 1 (integer)
-- `patterns`: Must be a LIST, never a dict
-- `confidence`: Must be between 0.0 and 1.0
-- `type`: Must be one of: "theme", "temporal", "behavioral", "other"
-- `export_format`: Must be "chatgpt" or "claude" (or null)
-- All datetime fields use ISO 8601 format
+automatically. If you notice missing context, re-read `.chat-retro-runtime/state/analysis.json`.
 """

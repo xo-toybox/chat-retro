@@ -16,6 +16,7 @@ All runtime data lives in `.chat-retro-runtime/`.
 | `issue-state.json` | Workflow state | Persistent | Ignored |
 | `feedback/` | Ratings | Persistent | Ignored |
 | `outputs/` | Artifacts | User-managed | Ignored |
+| `tmp/` | Temporary scripts | Ephemeral | Ignored |
 
 ## Directory Structure
 
@@ -36,7 +37,8 @@ All runtime data lives in `.chat-retro-runtime/`.
 │   └── CHANGELOG.md
 ├── issue-state.json          # Workflow state
 ├── feedback/                 # Quality ratings
-└── outputs/                  # Generated HTML artifacts
+├── outputs/                  # Generated HTML artifacts
+└── tmp/                      # Temporary analysis scripts
 ```
 
 ## Privacy Model

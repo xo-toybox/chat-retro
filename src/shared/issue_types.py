@@ -32,6 +32,8 @@ class IssueSeverity(str, Enum):
 class Issue(BaseModel):
     """Issue with lifecycle tracking."""
 
+    model_config = {"use_enum_values": True}
+
     id: str = Field(default_factory=lambda: uuid4().hex[:12])
 
     # Content (draft = raw, public = sanitized)
@@ -54,8 +56,8 @@ class Issue(BaseModel):
     cluster_id: str | None = None
     similarity_score: float | None = None
 
-    # Ranking
-    severity: IssueSeverity = IssueSeverity.medium
+    # Ranking (severity=None means triage agent will assign)
+    severity: IssueSeverity | None = None
     frequency: int = 1
     fix_complexity: str | None = None  # trivial, small, medium, large
     priority_score: float | None = None
@@ -70,6 +72,8 @@ class Issue(BaseModel):
 
 class IssueCluster(BaseModel):
     """Group of related issues for batch resolution."""
+
+    model_config = {"use_enum_values": True}
 
     id: str = Field(default_factory=lambda: f"cluster-{uuid4().hex[:8]}")
 

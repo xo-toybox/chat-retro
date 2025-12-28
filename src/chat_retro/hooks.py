@@ -1,4 +1,4 @@
-"""Hooks for audit logging, write protection, and state mutation tracking."""
+"""Hooks for audit logging and write protection."""
 
 
 from claude_agent_sdk import HookMatcher
@@ -57,11 +57,7 @@ async def block_external_writes(
 ) -> dict[str, Any]:
     """Prevent writes outside project directory.
 
-    Only allows writes to:
-    - ./outputs/
-    - ./state.json
-    - ./.chat-retro/
-
+    Only allows writes to ./.chat-retro-runtime/.
     Uses resolved paths to prevent traversal attacks.
     """
     # Only check PreToolUse events
@@ -142,90 +138,6 @@ async def state_mutation_logger(
     return {}
 
 
-def _deny_write(reason: str) -> dict[str, Any]:
-    """Helper to create a deny response for PreToolUse hooks."""
-    return {
-        "hookSpecificOutput": {
-            "hookEventName": "PreToolUse",
-            "permissionDecision": "deny",
-            "permissionDecisionReason": reason,
-        }
-    }
-
-
-async def validate_state_json_write(
-    input_data: dict[str, Any],
-    tool_use_id: str | None,
-    context: Any,
-) -> dict[str, Any]:
-    """Validate state.json writes match expected schema before allowing.
-
-    Catches schema violations at write time rather than on next load.
-    """
-    if input_data.get("hook_event_name") != "PreToolUse":
-        return {}
-
-    tool_name = input_data.get("tool_name", "")
-    if tool_name != "Write":
-        return {}
-
-    tool_input = input_data.get("tool_input", {})
-    file_path = tool_input.get("file_path", "") or tool_input.get("path", "")
-
-    if "analysis.json" not in str(file_path):
-        return {}
-
-    content = tool_input.get("content", "")
-    if not content:
-        return {}
-
-    try:
-        data = json.loads(content)
-    except json.JSONDecodeError as e:
-        return _deny_write(f"analysis.json content is not valid JSON: {e}")
-
-    # Validate required top-level structure
-    if "schema_version" not in data:
-        return _deny_write("analysis.json missing required 'schema_version' key")
-
-    if "meta" not in data:
-        return _deny_write("analysis.json missing required 'meta' key")
-
-    if "patterns" in data and not isinstance(data["patterns"], list):
-        return _deny_write(
-            "analysis.json 'patterns' must be a list, not a "
-            f"{type(data['patterns']).__name__}"
-        )
-
-    # Validate patterns if present
-    patterns = data.get("patterns", [])
-    for i, pattern in enumerate(patterns):
-        if not isinstance(pattern, dict):
-            return _deny_write(f"analysis.json patterns[{i}] must be an object")
-
-        confidence = pattern.get("confidence")
-        if confidence is not None:
-            if not isinstance(confidence, (int, float)):
-                return _deny_write(
-                    f"analysis.json patterns[{i}].confidence must be a number"
-                )
-            if not (0.0 <= confidence <= 1.0):
-                return _deny_write(
-                    f"analysis.json patterns[{i}].confidence={confidence} "
-                    "must be between 0.0 and 1.0"
-                )
-
-        pattern_type = pattern.get("type")
-        valid_types = ("theme", "temporal", "behavioral", "other")
-        if pattern_type is not None and pattern_type not in valid_types:
-            return _deny_write(
-                f"analysis.json patterns[{i}].type='{pattern_type}' "
-                f"must be one of: {valid_types}"
-            )
-
-    return {}
-
-
 async def debug_logger(
     input_data: dict[str, Any],
     tool_use_id: str | None,
@@ -273,7 +185,6 @@ if _DEBUG_LOGGING:
 HOOK_MATCHERS = {
     "PreToolUse": [
         HookMatcher(matcher="Write|Edit", hooks=[block_external_writes]),
-        HookMatcher(matcher="Write", hooks=[validate_state_json_write]),
     ],
     "PostToolUse": [
         HookMatcher(hooks=_post_hooks),

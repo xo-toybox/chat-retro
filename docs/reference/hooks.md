@@ -1,6 +1,6 @@
 # Hooks Reference
 
-Chat-retro uses Claude Agent SDK hooks for audit logging, write protection, and schema validation.
+Chat-retro uses Claude Agent SDK hooks for audit logging and write protection.
 
 ## Configuration
 
@@ -10,7 +10,6 @@ Hooks are configured in `src/chat_retro/hooks.py` via `HOOK_MATCHERS`:
 HOOK_MATCHERS = {
     "PreToolUse": [
         HookMatcher(matcher="Write|Edit", hooks=[block_external_writes]),
-        HookMatcher(matcher="Write", hooks=[validate_state_json_write]),
     ],
     "PostToolUse": [
         HookMatcher(hooks=[audit_logger, state_mutation_logger]),
@@ -23,7 +22,7 @@ HOOK_MATCHERS = {
 
 ### audit_logger (PostToolUse)
 
-Privacy-safe logging of tool usage. Logs to `.chat-retro/audit.log`.
+Privacy-safe logging of tool usage. Logs to `.chat-retro-runtime/logs/debug_audit.jsonl`.
 
 **Output format:**
 ```json
@@ -45,28 +44,14 @@ Privacy-safe logging of tool usage. Logs to `.chat-retro/audit.log`.
 Prevents writes outside allowed paths. Applied to `Write` and `Edit` tools.
 
 **Allowed paths:**
-- `./outputs/` - Generated artifacts
-- `./state.json` - Analysis state
-- `./.chat-retro/` - Runtime data
+- `./.chat-retro-runtime/` - All runtime data (state, outputs, logs, tmp)
 
 Uses `Path.resolve()` and `is_relative_to()` to prevent path traversal attacks.
-
-### validate_state_json_write (PreToolUse)
-
-Validates state.json content before allowing writes. Catches schema violations at write time.
-
-**Checks:**
-- Valid JSON syntax
-- Required `schema_version` key
-- Required `meta` key
-- `patterns` is a list (not dict)
-- Pattern `confidence` between 0.0 and 1.0
-- Pattern `type` is one of: theme, temporal, behavioral, other
 
 ### state_mutation_logger (PostToolUse)
 
 Tracks Edit operations on state.json for efficiency analysis.
-Logs to `.chat-retro/state-mutations.log`.
+Logs to `.chat-retro-runtime/logs/state-mutations.jsonl`.
 
 **Output format:**
 ```json
@@ -89,7 +74,7 @@ CHAT_RETRO_DEBUG=1 chat-retro ./conversations.json
 
 **WARNING:** Contains potentially sensitive data. Only use during development.
 
-Logs to `.chat-retro/debug.log` with full `tool_input` and `tool_response`.
+Logs to `.chat-retro-runtime/logs/debug.jsonl` with full `tool_input` and `tool_response`.
 
 ## Adding Custom Hooks
 

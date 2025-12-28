@@ -97,7 +97,7 @@ class StateManager:
 
     def _report_corruption(self, error_type: str, error_detail: str) -> None:
         """Auto-create issue when state.json fails validation."""
-        from shared import IssueReporter
+        from shared import IssueReporter, IssueSeverity
 
         # Capture preview of corrupt content for debugging
         state_preview = ""
@@ -119,6 +119,7 @@ class StateManager:
                 "error_type": error_type,
                 "state_path": str(self.state_path),
             },
+            severity=IssueSeverity.critical,  # Fast-track corruption issues
         )
 
     def save(self, state: AnalysisState) -> None:

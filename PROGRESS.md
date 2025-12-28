@@ -1,7 +1,7 @@
 # Progress
 
 ## Current Status
-Phase 5 complete. Ready for Phase 6 (artifact generator).
+Phase 6 complete. Ready for Phase 7 (system prompts) - Human Gate.
 
 ## Completed Features
 - proj-setup: Fixed pyproject.toml, created package structure
@@ -16,6 +16,9 @@ Phase 5 complete. Ready for Phase 6 (artifact generator).
 - session-resumption: Resume via stored session_id
 - cli-argparse: CLI with export_path and --resume
 - cli-wire-components: Session + state managers wired, Ctrl+C handling
+- artifact-html-template: Self-contained HTML per ADR-003
+- artifact-d3-bundling: D3.js v7 minified (~280KB)
+- artifact-generator-class: ArtifactGenerator with generate_html/markdown
 
 ## Feature Summary
 - **Total**: 20 features
@@ -47,6 +50,7 @@ Phase 5 complete. Ready for Phase 6 (artifact generator).
 - Phase 3: Hooks (22 tests passing)
 - Phase 4: Session manager (human gate approved)
 - Phase 5: CLI entry point (--help exits 0)
+- Phase 6: Artifact generator (14 tests passing)
 
 ## Decisions
 - Following impl-plan.md phases exactly

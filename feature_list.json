@@ -147,7 +147,7 @@
         "Template produces valid HTML",
         "No external network requests in output"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "artifact-d3-bundling",
@@ -158,7 +158,7 @@
         "D3.js source included in artifacts.py or bundled file",
         "Generated HTML works when opened as local file"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "artifact-generator-class",
@@ -168,7 +168,7 @@
       "verification_steps": [
         "uv run pytest tests/test_artifacts.py exits 0"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "system-prompt",

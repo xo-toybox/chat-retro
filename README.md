@@ -14,16 +14,7 @@ Supports ChatGPT and Claude (planned) export formats.
 
 ## Features
 
-### Analysis Subagents
-- **Topic Extractor**: Clusters conversation topics with confidence scores
-- **Sentiment Tracker**: Tracks emotional tone evolution over time
-- **Pattern Detector**: Identifies prompting patterns and anti-patterns
-- **Temporal Analyst**: Analyzes time-based usage patterns
-
-### Insight Generators
-- **Prompt Improver**: Before/after suggestions for better prompting
-- **Repetition Detector**: Finds repetitive queries, suggests templates
-- **Usage Optimizer**: Time and context recommendations
+Agentic analysis with [specialized subagents](docs/reference/agents.md): topic extraction, sentiment tracking, pattern detection, temporal analysis, and insight generation.
 
 ### Visualizations
 - **Timeline**: D3.js area chart of conversation frequency
@@ -78,3 +69,19 @@ uv sync                    # Install dependencies
 uv run pytest              # Run tests (253 passing)
 uv run pyright             # Type check
 ```
+
+## Documentation
+
+**Foundations** — Curated decisions (stable)
+- [Spec](docs/foundations/spec.md) - Product requirements
+- [ADRs](docs/foundations/adr/) - Architecture decisions
+
+**Iteration** — Current development phase (evolving)
+- [Design](docs/iteration/design.md) - System design
+- [Implementation Plan](docs/iteration/impl-plan.md) - Build phases
+- [Design Review](docs/iteration/design-review-checklist.md) - Review checklist
+
+**Reference** — API docs (update with code)
+- [Agents](docs/reference/agents.md) - Subagent definitions
+- [Hooks](docs/reference/hooks.md) - SDK hooks
+- [Runtime Files](docs/reference/runtime-files.md) - Logs and state

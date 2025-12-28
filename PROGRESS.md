@@ -1,7 +1,7 @@
 # Progress
 
 ## Current Status
-Phase 4 complete. Ready for Phase 5 (CLI entry point).
+Phase 5 complete. Ready for Phase 6 (artifact generator).
 
 ## Completed Features
 - proj-setup: Fixed pyproject.toml, created package structure
@@ -14,6 +14,8 @@ Phase 4 complete. Ready for Phase 5 (CLI entry point).
 - session-manager-basic: ClaudeSDKClient wrapper
 - session-interaction-loop: Streaming responses, user input loop
 - session-resumption: Resume via stored session_id
+- cli-argparse: CLI with export_path and --resume
+- cli-wire-components: Session + state managers wired, Ctrl+C handling
 
 ## Feature Summary
 - **Total**: 20 features
@@ -44,6 +46,7 @@ Phase 4 complete. Ready for Phase 5 (CLI entry point).
 - Phase 2: State schema (16 tests passing)
 - Phase 3: Hooks (22 tests passing)
 - Phase 4: Session manager (human gate approved)
+- Phase 5: CLI entry point (--help exits 0)
 
 ## Decisions
 - Following impl-plan.md phases exactly

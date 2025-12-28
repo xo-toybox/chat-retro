@@ -125,7 +125,7 @@
         "uv run python -m chat_retro --help exits 0",
         "Shows export_path and --resume arguments"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "cli-wire-components",
@@ -136,7 +136,7 @@
         "CLI loads state.json if exists",
         "Ctrl+C triggers graceful shutdown"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "artifact-html-template",

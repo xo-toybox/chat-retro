@@ -394,6 +394,11 @@ class IssueWorkflow:
                     message="Resolution plan rejected.",
                 )
             result = self._run_agent("issue-resolution", task_context, approved=True)
+            if result is None:
+                return WorkflowResult(
+                    success=False,
+                    message="Resolution agent failed after approval.",
+                )
 
         # Apply resolution output to state
         if isinstance(result, dict):
@@ -421,7 +426,7 @@ class IssueWorkflow:
         Creates a singleton cluster and resolves in one state transaction.
         """
         print(f"\n=== FAST-TRACK: {issue.title[:50]} ===")
-        print(f"Severity: CRITICAL - bypassing normal queue")
+        print("Severity: CRITICAL - bypassing normal queue")
 
         # Create singleton cluster with auto-approval
         cluster = IssueCluster(

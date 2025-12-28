@@ -1,7 +1,7 @@
 # Progress
 
 ## Current Status
-Phase 3 complete. Ready for Phase 4 (session manager) - Human Gate.
+Phase 4 complete. Ready for Phase 5 (CLI entry point).
 
 ## Completed Features
 - proj-setup: Fixed pyproject.toml, created package structure
@@ -10,6 +10,10 @@ Phase 3 complete. Ready for Phase 4 (session manager) - Human Gate.
 - hook-audit-logger: Privacy-safe tool usage logging
 - hook-block-writes: Write protection for allowed paths only
 - hook-state-mutation: Edit tracking on state.json
+- usage-report: Cost/token tracking from ResultMessage
+- session-manager-basic: ClaudeSDKClient wrapper
+- session-interaction-loop: Streaming responses, user input loop
+- session-resumption: Resume via stored session_id
 
 ## Feature Summary
 - **Total**: 20 features
@@ -39,6 +43,7 @@ Phase 3 complete. Ready for Phase 4 (session manager) - Human Gate.
 - Phase 1: Fixed pyproject.toml (claude-code-sdk>=0.0.25), created src/chat_retro/, tests/
 - Phase 2: State schema (16 tests passing)
 - Phase 3: Hooks (22 tests passing)
+- Phase 4: Session manager (human gate approved)
 
 ## Decisions
 - Following impl-plan.md phases exactly

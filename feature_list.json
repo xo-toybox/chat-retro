@@ -81,7 +81,7 @@
         "uv run python -c 'from chat_retro.usage import UsageReport' succeeds",
         "UsageReport.summary() returns expected format"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "session-manager-basic",
@@ -92,7 +92,7 @@
         "uv run python -c 'from chat_retro.session import SessionManager' succeeds",
         "Code matches design doc section 3.1 patterns"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "session-interaction-loop",
@@ -103,7 +103,7 @@
         "Method exists with async generator handling",
         "Handles ResultMessage for cost tracking"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "session-resumption",
@@ -114,7 +114,7 @@
         "start_session() accepts resume_id parameter",
         "Session ID persisted to .chat-retro/sessions/"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "cli-argparse",

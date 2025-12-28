@@ -28,7 +28,7 @@
         "uv run python -c 'from chat_retro.state import AnalysisState' succeeds",
         "Models validate sample state.json structure from design doc"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "state-manager",
@@ -38,7 +38,7 @@
       "verification_steps": [
         "uv run pytest tests/test_state.py exits 0"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "hook-audit-logger",

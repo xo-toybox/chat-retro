@@ -1,10 +1,12 @@
 # Progress
 
 ## Current Status
-Phase 1 complete. Ready for Phase 2 (state schema).
+Phase 2 complete. Ready for Phase 3 (hooks).
 
 ## Completed Features
 - proj-setup: Fixed pyproject.toml, created package structure
+- state-models: Pydantic models (AnalysisState, StateMeta, Pattern, etc.)
+- state-manager: StateManager with load/save/merge, atomic writes, corruption recovery
 
 ## Feature Summary
 - **Total**: 20 features
@@ -32,6 +34,7 @@ Phase 1 complete. Ready for Phase 2 (state schema).
 - Created PROGRESS.md
 - Created init.sh
 - Phase 1: Fixed pyproject.toml (claude-code-sdk>=0.0.25), created src/chat_retro/, tests/
+- Phase 2: State schema (16 tests passing)
 
 ## Decisions
 - Following impl-plan.md phases exactly

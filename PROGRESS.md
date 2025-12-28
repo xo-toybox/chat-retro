@@ -1,7 +1,7 @@
 # Progress
 
 ## Current Status
-Phase 7 complete. Ready for Phase 8 (integration test) - Human Gate.
+**ALL PHASES COMPLETE.** Project ready for use.
 
 ## Completed Features
 - proj-setup: Fixed pyproject.toml, created package structure
@@ -21,6 +21,9 @@ Phase 7 complete. Ready for Phase 8 (integration test) - Human Gate.
 - artifact-generator-class: ArtifactGenerator with generate_html/markdown
 - system-prompt: Agent persona from design doc 4.1
 - error-handling: USER_ERRORS dict for friendly messages
+- runtime-dirs: .chat-retro/, outputs/ created on startup
+- integration-test: E2E with 20 ChatGPT conversations
+- claude-export-format: Agent detects format automatically
 
 ## Feature Summary
 - **Total**: 20 features
@@ -54,6 +57,7 @@ Phase 7 complete. Ready for Phase 8 (integration test) - Human Gate.
 - Phase 5: CLI entry point (--help exits 0)
 - Phase 6: Artifact generator (14 tests passing)
 - Phase 7: System prompts (human gate approved)
+- Phase 8: Integration test passed ($0.29, 26 turns, artifact generated)
 
 ## Decisions
 - Following impl-plan.md phases exactly

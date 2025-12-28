@@ -11,6 +11,19 @@ from pathlib import Path
 from .session import SessionManager
 from .state import StateManager
 
+# Runtime directories
+RUNTIME_DIRS = [
+    Path(".chat-retro"),
+    Path(".chat-retro/sessions"),
+    Path("outputs"),
+]
+
+
+def ensure_runtime_dirs() -> None:
+    """Create runtime directories if they don't exist."""
+    for dir_path in RUNTIME_DIRS:
+        dir_path.mkdir(parents=True, exist_ok=True)
+
 
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
@@ -35,6 +48,9 @@ def parse_args() -> argparse.Namespace:
 async def run_async(args: argparse.Namespace) -> int:
     """Run the async session."""
     export_path = args.export_path
+
+    # Ensure runtime directories exist
+    ensure_runtime_dirs()
 
     # Validate export file exists
     if not export_path.exists():

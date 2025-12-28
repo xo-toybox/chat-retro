@@ -17,7 +17,7 @@
         "src/chat_retro/__main__.py exists with main() stub",
         "tests/ directory exists"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "state-models",

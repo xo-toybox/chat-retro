@@ -10,7 +10,7 @@ uv run chat-retro ./conversations.json
 uv run chat-retro ./conversations.json --resume SESSION_ID
 ```
 
-Supports ChatGPT and Claude export formats.
+Supports ChatGPT and Claude (planned) export formats.
 
 ## Features
 

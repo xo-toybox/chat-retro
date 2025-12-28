@@ -42,7 +42,7 @@ async def audit_logger(
     # Write to audit log
     log_dir = Path(".chat-retro-runtime/logs")
     log_dir.mkdir(parents=True, exist_ok=True)
-    log_file = log_dir / "audit.jsonl"
+    log_file = log_dir / "debug_audit.jsonl"
 
     with open(log_file, "a") as f:
         f.write(json.dumps(event) + "\n")

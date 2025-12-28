@@ -32,35 +32,46 @@ Agentic analysis with [specialized subagents](docs/reference/agents.md): topic e
 - Quality prompts after analysis
 - Pattern rating (1-5 or thumbs)
 - Gap detection for missing features
-- Issue reporting (GitHub or local)
 
 ## How It Works
 
-Uses Claude Agent SDK with built-in tools (Read, Grep, Glob, Bash, Write, Edit). Agent explores raw JSON exports directly with no preprocessing. State persists locally in `state.json`. Generated artifacts are self-contained HTML with inlined D3.js.
+Uses Claude Agent SDK with built-in tools (Read, Grep, Glob, Bash, Write, Edit). Agent explores raw JSON exports directly with no preprocessing. State persists locally in `.chat-retro-runtime/`. Generated artifacts are self-contained HTML with inlined D3.js.
+
+## Issue Workflow
+
+Automated issue management via agentic pipeline:
+
+```bash
+issue-workflow report-bug    # Create draft issue interactively
+issue-workflow drafts        # View pending drafts
+issue-workflow process       # Run full pipeline (triage → cluster → prioritize → resolve)
+```
+
+Human gates at prioritization and low-confidence resolution. See [ADR-005](docs/foundations/adr/adr-005-agentic-issue-workflow.md). See reference doc for additional commands and details.
 
 ## Structure
 
 ```
-src/chat_retro/
-├── __main__.py    # CLI entry point
-├── session.py     # Claude SDK wrapper, interaction loop
-├── state.py       # Pydantic models for state.json
-├── prompts.py     # System prompts
-├── agents.py      # Analysis subagent definitions
-├── insights.py    # Insight generator agents
-├── artifacts.py   # HTML bundler with D3.js
-├── interactive.py # JS/CSS for interactive artifacts
-├── eval.py        # Feedback collection
-├── hooks.py       # Audit logging
-├── usage.py       # Token tracking
-└── viz_templates/ # D3.js visualization templates
-    ├── timeline.py
-    ├── heatmap.py
-    ├── topic_clusters.py
-    └── length_distribution.py
+src/
+├── chat_retro/              # Product
+│   ├── __main__.py          # CLI entry point
+│   ├── session.py           # Claude SDK wrapper
+│   ├── state.py             # Pydantic models
+│   ├── prompts.py           # System prompts
+│   ├── agents.py            # Analysis subagents
+│   ├── insights.py          # Insight generators
+│   ├── eval.py              # Feedback collection
+│   └── viz_templates/       # D3.js visualizations
+├── issue_workflow/          # Issue pipeline tool
+│   ├── agents.py            # Triage/cluster/prioritize/resolve
+│   ├── workflow.py          # Pipeline orchestration
+│   └── cli.py               # CLI entry point
+└── shared/                  # Common types
+    ├── issue_types.py       # Issue, IssueCluster, IssueState
+    └── issue_reporter.py    # Auto/manual issue reporting
 ```
 
-Runtime files: `state.json`, `.chat-retro/`, `outputs/`
+Runtime files: `.chat-retro-runtime/` (see [runtime-files.md](docs/reference/runtime-files.md))
 
 ## Development
 
@@ -85,3 +96,4 @@ uv run pyright             # Type check
 - [Agents](docs/reference/agents.md) - Subagent definitions
 - [Hooks](docs/reference/hooks.md) - SDK hooks
 - [Runtime Files](docs/reference/runtime-files.md) - Logs and state
+- [Issue Reporting](docs/reference/issue-reporting.md) - Auto/manual issue drafts

@@ -92,7 +92,7 @@ AGENTS: dict[str, AgentDefinition] = {
 def get_agents() -> dict[str, AgentDefinition]:
     """Get all agents for ClaudeAgentOptions.
 
-    Includes both analysis agents and insight agents.
+    Includes analysis and insight agents.
     """
     from chat_retro.insights import get_insight_agents
 

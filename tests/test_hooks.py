@@ -56,7 +56,7 @@ class TestAuditLogger:
         result = await audit_logger(input_data, "tool-use-1", None)
 
         assert result == {}
-        log_file = log_dir / "audit.jsonl"
+        log_file = log_dir / "debug_audit.jsonl"
         assert log_file.exists()
 
         log_entry = json.loads(log_file.read_text().strip())
@@ -73,7 +73,7 @@ class TestAuditLogger:
 
         await audit_logger(input_data, None, None)
 
-        log_file = log_dir / "audit.jsonl"
+        log_file = log_dir / "debug_audit.jsonl"
         log_entry = json.loads(log_file.read_text().strip())
 
         # Should have file_hash, not file_path
@@ -92,7 +92,7 @@ class TestAuditLogger:
 
         await audit_logger(input_data, None, None)
 
-        log_file = log_dir / "audit.jsonl"
+        log_file = log_dir / "debug_audit.jsonl"
         log_entry = json.loads(log_file.read_text().strip())
         assert "file_hash" in log_entry
 
@@ -103,7 +103,7 @@ class TestAuditLogger:
 
         await audit_logger(input_data, None, None)
 
-        log_file = log_dir / "audit.jsonl"
+        log_file = log_dir / "debug_audit.jsonl"
         log_entry = json.loads(log_file.read_text().strip())
         assert "timestamp" in log_entry
 

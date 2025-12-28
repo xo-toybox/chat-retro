@@ -5,16 +5,13 @@ Provides mechanisms for:
 - Rating patterns/insights
 - Gap detection (expected but missing)
 - Feedback aggregation
-- Issue reporting
 """
 
 import json
-import webbrowser
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Literal
-from urllib.parse import urlencode
 
 from pydantic import BaseModel, Field
 
@@ -278,98 +275,6 @@ class FeedbackManager:
                 low_rated.append((pattern_id, round(avg, 2), len(ratings)))
 
         return sorted(low_rated, key=lambda x: x[1])
-
-
-# ============================================================================
-# Issue reporter
-# ============================================================================
-
-
-@dataclass
-class IssueReporter:
-    """Quick path to report issues."""
-
-    repo_url: str = "https://github.com/example/chat-retro"
-    local_issues_dir: Path = field(
-        default_factory=lambda: Path(".chat-retro-runtime/issues")
-    )
-
-    def __post_init__(self) -> None:
-        self.local_issues_dir.mkdir(parents=True, exist_ok=True)
-
-    def create_github_issue_url(
-        self,
-        title: str,
-        body: str,
-        labels: list[str] | None = None,
-    ) -> str:
-        """Generate a GitHub issue URL with pre-filled content."""
-        params: dict[str, str] = {
-            "title": title,
-            "body": body,
-        }
-        if labels:
-            params["labels"] = ",".join(labels)
-
-        return f"{self.repo_url}/issues/new?{urlencode(params)}"
-
-    def open_github_issue(
-        self,
-        title: str,
-        body: str,
-        labels: list[str] | None = None,
-    ) -> str:
-        """Open browser to create GitHub issue."""
-        url = self.create_github_issue_url(title, body, labels)
-        webbrowser.open(url)
-        return url
-
-    def save_local_issue(
-        self,
-        title: str,
-        description: str,
-        category: str = "bug",
-        context: dict | None = None,
-    ) -> Path:
-        """Save issue locally for offline reporting."""
-        import uuid
-
-        issue = {
-            "title": title,
-            "description": description,
-            "category": category,
-            "context": context or {},
-            "timestamp": datetime.now().isoformat(),
-            "reported": False,
-        }
-
-        # Include UUID to ensure uniqueness even if called rapidly
-        unique_id = uuid.uuid4().hex[:8]
-        filename = f"issue_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{unique_id}.json"
-        filepath = self.local_issues_dir / filename
-        filepath.write_text(json.dumps(issue, indent=2))
-        return filepath
-
-    def get_pending_issues(self) -> list[dict]:
-        """Get locally saved issues that haven't been reported."""
-        issues = []
-        for f in self.local_issues_dir.glob("issue_*.json"):
-            try:
-                issue = json.loads(f.read_text())
-                if not issue.get("reported", False):
-                    issue["file"] = str(f)
-                    issues.append(issue)
-            except (json.JSONDecodeError, ValueError):
-                continue
-        return issues
-
-    def mark_issue_reported(self, filepath: str | Path) -> None:
-        """Mark a local issue as reported."""
-        path = Path(filepath)
-        if path.exists():
-            issue = json.loads(path.read_text())
-            issue["reported"] = True
-            path.write_text(json.dumps(issue, indent=2))
 
 
 # ============================================================================

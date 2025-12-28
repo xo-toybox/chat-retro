@@ -15,7 +15,7 @@ wheels/
 
 # Runtime data - ignore all, whitelist safe (privacy-first)
 # See docs/reference/runtime-files.md for privacy model
-.chat-retro-runtime/
+.chat-retro-runtime/*
 # Whitelist dirs, ignore contents, then whitelist safe files
 !.chat-retro-runtime/logs/
 !.chat-retro-runtime/outputs/
@@ -25,9 +25,10 @@ wheels/
 .chat-retro-runtime/outputs/*
 .chat-retro-runtime/issues/*
 .chat-retro-runtime/feedback/*
-# Safe files only
-!.chat-retro-runtime/logs/audit.jsonl
+# Safe and useful files only (debug_* files are public but not useful to track)
 !.chat-retro-runtime/logs/metrics.jsonl
+!.chat-retro-runtime/issues/issue_*.json
+!.chat-retro-runtime/issues/CHANGELOG.md
 !.chat-retro-runtime/*/.gitkeep
 
 # User data

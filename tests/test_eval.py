@@ -13,7 +13,6 @@ from chat_retro.eval import (
     FeedbackManager,
     FeedbackSummary,
     GapReport,
-    IssueReporter,
     PatternRating,
     QualityResponse,
     SessionFeedback,
@@ -21,6 +20,7 @@ from chat_retro.eval import (
     get_gap_categories,
     get_quality_questions,
 )
+from shared import IssueReporter
 
 
 class TestPatternRating:
@@ -262,9 +262,9 @@ class TestIssueReporter:
         assert "title=Bug+report" in url
         assert "labels=bug%2Cfeedback" in url
 
-    def test_save_local_issue(self, tmp_path: Path) -> None:
-        reporter = IssueReporter(local_issues_dir=tmp_path / "issues")
-        filepath = reporter.save_local_issue(
+    def test_save_draft_issue(self, tmp_path: Path) -> None:
+        reporter = IssueReporter(drafts_dir=tmp_path / "drafts")
+        filepath = reporter.save_draft_issue(
             title="Test issue",
             description="Something is wrong",
             category="bug",
@@ -274,29 +274,16 @@ class TestIssueReporter:
         assert filepath.exists()
         issue = json.loads(filepath.read_text())
         assert issue["title"] == "Test issue"
-        assert issue["reported"] is False
+        assert issue["status"] == "draft"
         assert issue["context"]["session"] == "123"
 
-    def test_get_pending_issues(self, tmp_path: Path) -> None:
-        reporter = IssueReporter(local_issues_dir=tmp_path / "issues")
-        reporter.save_local_issue("Issue 1", "Desc 1")
-        reporter.save_local_issue("Issue 2", "Desc 2")
+    def test_get_pending_drafts(self, tmp_path: Path) -> None:
+        reporter = IssueReporter(drafts_dir=tmp_path / "drafts")
+        reporter.save_draft_issue("Issue 1", "Desc 1")
+        reporter.save_draft_issue("Issue 2", "Desc 2")
 
-        pending = reporter.get_pending_issues()
+        pending = reporter.get_pending_drafts()
         assert len(pending) == 2
-
-    def test_mark_issue_reported(self, tmp_path: Path) -> None:
-        reporter = IssueReporter(local_issues_dir=tmp_path / "issues")
-        filepath = reporter.save_local_issue("Issue", "Desc")
-
-        reporter.mark_issue_reported(filepath)
-
-        issue = json.loads(filepath.read_text())
-        assert issue["reported"] is True
-
-        # Should not appear in pending anymore
-        pending = reporter.get_pending_issues()
-        assert len(pending) == 0
 
 
 class TestQualityQuestions:

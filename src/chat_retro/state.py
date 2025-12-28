@@ -97,7 +97,7 @@ class StateManager:
 
     def _report_corruption(self, error_type: str, error_detail: str) -> None:
         """Auto-create issue when state.json fails validation."""
-        from .eval import IssueReporter
+        from shared import IssueReporter
 
         # Capture preview of corrupt content for debugging
         state_preview = ""
@@ -107,7 +107,7 @@ class StateManager:
             pass
 
         reporter = IssueReporter()
-        reporter.save_local_issue(
+        reporter.save_draft_issue(
             title=f"State corruption: {error_type}",
             description=(
                 f"state.json failed to load and was renamed to .corrupt.\n\n"

@@ -51,10 +51,14 @@ Each project's analysis is self-contained. No risk of cross-contamination betwee
 
 ### Storage Location
 
+Project-local (in the working directory where `chat-retro` is invoked):
+
 ```
-~/.chat-retro/
+./
 ├── state.json              # Analysis state
-└── snapshots/
+├── .chat-retro/            # Internal files
+│   └── sessions/           # Session resumption data
+└── outputs/
     ├── 2025-06.html        # Versioned artifacts
     └── 2025-09.html
 ```

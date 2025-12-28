@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import urlencode
 
-from .issue_types import Issue, IssueStatus
+from .issue_types import Issue, IssueSeverity, IssueStatus
 
 
 @dataclass
@@ -35,10 +35,13 @@ class IssueReporter:
         description: str,
         category: str = "bug",
         context: dict | None = None,
+        severity: IssueSeverity | None = None,
     ) -> Path:
         """Save draft issue for processing by issue-workflow.
 
         Uses shared Issue schema for compatibility with the workflow pipeline.
+        Pass severity for known-critical issues (e.g., data corruption) to
+        enable fast-tracking in the workflow.
         """
         issue = Issue(
             title=title,
@@ -46,6 +49,7 @@ class IssueReporter:
             category=category,
             context=context or {},
             status=IssueStatus.draft,
+            severity=severity,
         )
 
         filename = f"draft_{issue.created.strftime('%Y%m%d_%H%M%S')}_{issue.id}.json"

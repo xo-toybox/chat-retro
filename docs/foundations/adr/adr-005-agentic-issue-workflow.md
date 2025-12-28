@@ -90,6 +90,8 @@ Sanitization removes:
 - Conversation excerpts
 - PII and personal data
 
+**State simplification**: After triage, sanitized content replaces raw `title`/`description` fields directly. No duplicate `sanitized_*` fields are kept, reducing state file size.
+
 ### Clustering Strategy
 
 Primary signal: **affected files**

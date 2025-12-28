@@ -140,7 +140,7 @@ class TestStateManager:
         state_path = tmp_path / "state.json"
         state_path.write_text("not valid json {{{")
 
-        manager = StateManager(state_path=state_path)
+        manager = StateManager(state_path=state_path, report_corruption=False)
         result = manager.load()
 
         assert result is None
@@ -154,7 +154,7 @@ class TestStateManager:
         # Valid JSON but invalid schema
         state_path.write_text('{"schema_version": 1, "meta": "not an object"}')
 
-        manager = StateManager(state_path=state_path)
+        manager = StateManager(state_path=state_path, report_corruption=False)
         result = manager.load()
 
         assert result is None

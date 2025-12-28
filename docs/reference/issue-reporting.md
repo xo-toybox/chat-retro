@@ -14,7 +14,27 @@ Manual reports (issue-workflow report-bug) ─┘
                                         │
                                         ↓
                             issue-workflow process
+                                        │
+                    ┌───────────┬───────┴───────┬───────────┐
+                    ↓           ↓               ↓           ↓
+             issue-triage  issue-clustering  issue-prioritization  issue-resolution
+              (subagent)     (subagent)         (subagent)           (subagent)
 ```
+
+## Execution Model
+
+The issue workflow uses Claude Code CLI (`claude -p`) for agent execution:
+
+- **Subscription-based pricing** (not per-token API costs)
+- **Prompts loaded at runtime** from `.claude/agents/issue-*.md`
+- **Output schemas** reference types in `src/shared/issue_types.py`
+- **Sync execution** via subprocess (no async/await)
+
+See [ADR-006](../foundations/adr/adr-006-issue-workflow-cli-migration.md) for migration rationale.
+
+**Prerequisites**:
+- Claude Code CLI installed (`npm install -g @anthropic-ai/claude-code`)
+- Active Claude subscription (Pro, Max 5x, or Max 20x)
 
 ## Shared Module
 
@@ -51,11 +71,29 @@ issue-workflow drafts
 
 # Process drafts through pipeline
 issue-workflow process
+
+# Process with auto-approval (non-interactive mode)
+issue-workflow process --yes
+
+# List issues (optionally filter by status)
+issue-workflow list [--status draft|triaged|clustered|resolved|deferred|wontfix]
+
+# List issue clusters
+issue-workflow clusters
+
+# Approve cluster for resolution
+issue-workflow approve <cluster_id>
+
+# Defer an issue
+issue-workflow defer <issue_id>
+
+# Mark issue as won't fix
+issue-workflow wontfix <issue_id>
 ```
 
-## Draft Format
+## Issue Format
 
-Drafts use the shared `Issue` schema from `src/shared/issue_types.py`:
+Issues use the shared `Issue` schema from `src/shared/issue_types.py`:
 
 ```json
 {
@@ -70,11 +108,14 @@ Drafts use the shared `Issue` schema from `src/shared/issue_types.py`:
 }
 ```
 
+**Sanitization**: During triage, raw `title`/`description` are overwritten with sanitized content. Original values are preserved in `context.raw_title`/`context.raw_description` if needed for debugging.
+
 ## Storage
 
 | Path | Contents | Git Status |
 |------|----------|------------|
 | `.chat-retro-runtime/issue-drafts/` | Raw drafts with sensitive context | gitignored |
+| `.chat-retro-runtime/issue-state.json` | Workflow state (issues, clusters) | gitignored |
 | `.chat-retro-runtime/issues/` | Sanitized public issues | tracked |
 
 ## Adding Auto-Report Hooks
@@ -102,4 +143,6 @@ def _handle_error(error_type: str, detail: str) -> None:
 ## Related
 
 - [ADR-005: Agentic Issue Workflow](../foundations/adr/adr-005-agentic-issue-workflow.md)
+- [ADR-006: Issue Workflow CLI Migration](../foundations/adr/adr-006-issue-workflow-cli-migration.md)
+- [Code Review Bots Research](./code-review-bots-research.md)
 - [Runtime Files](./runtime-files.md)

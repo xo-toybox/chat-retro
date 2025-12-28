@@ -6,8 +6,8 @@ Explore your AI conversation history with an agentic approach. The agent propose
 
 ```bash
 uv sync
-uv run chat-retro ./conversations.json
-uv run chat-retro ./conversations.json --resume SESSION_ID
+uv run chat-retro ./.chat-retro-runtime/.data/conversations.json
+uv run chat-retro ./.chat-retro-runtime/.data/conversations.json --resume SESSION_ID
 ```
 
 Supports ChatGPT and Claude (planned) export formats.
@@ -63,7 +63,8 @@ src/
 │   ├── eval.py              # Feedback collection
 │   └── viz_templates/       # D3.js visualizations
 ├── issue_workflow/          # Issue pipeline tool
-│   ├── agents.py            # Triage/cluster/prioritize/resolve
+│   ├── agents.py            # Agent definitions (prompts in .claude/agents/)
+│   ├── runner.py            # Claude Code CLI runner
 │   ├── workflow.py          # Pipeline orchestration
 │   └── cli.py               # CLI entry point
 └── shared/                  # Common types

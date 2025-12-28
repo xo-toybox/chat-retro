@@ -36,11 +36,9 @@ class Issue(BaseModel):
 
     id: str = Field(default_factory=lambda: uuid4().hex[:12])
 
-    # Content (draft = raw, public = sanitized)
+    # Content (raw during draft, sanitized after triage)
     title: str
     description: str
-    sanitized_title: str | None = None
-    sanitized_description: str | None = None
 
     # Classification
     category: str = "bug"
@@ -92,6 +90,20 @@ class IssueCluster(BaseModel):
     # Resolution
     resolution_strategy: str | None = None  # single_pr, multiple_prs
     status: str = "pending"  # pending, approved, in_progress, resolved
+
+
+class ResolutionResult(BaseModel):
+    """Agent output for issue resolution."""
+
+    action: str  # "implemented" or "needs_approval"
+
+    # For action="implemented"
+    commit: str | None = None
+    notes: str | None = None
+
+    # For action="needs_approval"
+    plan: dict | None = None
+    questions: list[str] = Field(default_factory=list)
 
 
 class IssueState(BaseModel):

@@ -124,7 +124,9 @@ GAP_CATEGORIES = [
 class FeedbackManager:
     """Manages feedback collection and persistence."""
 
-    feedback_dir: Path = field(default_factory=lambda: Path(".chat-retro/feedback"))
+    feedback_dir: Path = field(
+        default_factory=lambda: Path(".chat-retro-runtime/feedback")
+    )
     current_session: SessionFeedback | None = None
 
     def __post_init__(self) -> None:
@@ -289,7 +291,7 @@ class IssueReporter:
 
     repo_url: str = "https://github.com/example/chat-retro"
     local_issues_dir: Path = field(
-        default_factory=lambda: Path(".chat-retro/issues")
+        default_factory=lambda: Path(".chat-retro-runtime/issues")
     )
 
     def __post_init__(self) -> None:

@@ -19,10 +19,10 @@ class TestTimelineViz:
         """Conversations with Unix timestamps are processed."""
         # Use timestamps that result in same date in local timezone
         # Get today's midnight in local time as reference
-        import time
+        from datetime import timedelta
         today = datetime.now().replace(hour=12, minute=0, second=0, microsecond=0)
         ts_day1 = today.timestamp()
-        ts_day2 = (today.replace(day=today.day + 1) if today.day < 28 else today.replace(month=today.month + 1, day=1)).timestamp()
+        ts_day2 = (today + timedelta(days=1)).timestamp()
 
         conversations = [
             {"create_time": ts_day1},

@@ -51,7 +51,7 @@ class Session:
 class SessionManager:
     """Manages chat-retro sessions with Claude Code SDK."""
 
-    SESSIONS_DIR = Path(".chat-retro/sessions")
+    RUNTIME_DIR = Path(".chat-retro-runtime")
 
     def __init__(
         self,
@@ -78,13 +78,13 @@ class SessionManager:
 
     def _save_session_id(self, session_id: str) -> None:
         """Persist session ID for future resumption."""
-        self.SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
-        session_file = self.SESSIONS_DIR / "latest.json"
+        self.RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
+        session_file = self.RUNTIME_DIR / "resume-session.json"
         session_file.write_text(json.dumps({"session_id": session_id}))
 
     def _load_latest_session_id(self) -> str | None:
         """Load the most recent session ID."""
-        session_file = self.SESSIONS_DIR / "latest.json"
+        session_file = self.RUNTIME_DIR / "resume-session.json"
         if session_file.exists():
             try:
                 data = json.loads(session_file.read_text())
@@ -168,8 +168,9 @@ class SessionManager:
 
     def _save_metrics(self) -> None:
         """Persist metrics to a JSONL file for later analysis."""
-        metrics_file = Path(".chat-retro/metrics.jsonl")
-        metrics_file.parent.mkdir(parents=True, exist_ok=True)
+        logs_dir = self.RUNTIME_DIR / "logs"
+        logs_dir.mkdir(parents=True, exist_ok=True)
+        metrics_file = logs_dir / "metrics.jsonl"
         with metrics_file.open("a") as f:
             f.write(json.dumps(self.session.usage.detailed_summary()) + "\n")
 

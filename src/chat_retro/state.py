@@ -65,11 +65,13 @@ class AnalysisState(BaseModel):
 
 @dataclass
 class StateManager:
-    """Read/write local state.json with migration support."""
+    """Read/write local analysis.json with migration support."""
 
     CURRENT_VERSION: int = 1
 
-    state_path: Path = field(default_factory=lambda: Path("state.json"))
+    state_path: Path = field(
+        default_factory=lambda: Path(".chat-retro-runtime/state/analysis.json")
+    )
 
     def load(self) -> AnalysisState | None:
         """Load existing state with migration and corruption recovery."""
@@ -82,10 +84,42 @@ class StateManager:
             if version < self.CURRENT_VERSION:
                 data = self._migrate(data, version)
             return AnalysisState.model_validate(data)
-        except (json.JSONDecodeError, ValidationError):
+        except json.JSONDecodeError as e:
+            self._report_corruption("Invalid JSON", str(e))
             backup = self.state_path.with_suffix(".json.corrupt")
             self.state_path.rename(backup)
             return None
+        except ValidationError as e:
+            self._report_corruption("Schema validation failed", str(e))
+            backup = self.state_path.with_suffix(".json.corrupt")
+            self.state_path.rename(backup)
+            return None
+
+    def _report_corruption(self, error_type: str, error_detail: str) -> None:
+        """Auto-create issue when state.json fails validation."""
+        from .eval import IssueReporter
+
+        # Capture preview of corrupt content for debugging
+        state_preview = ""
+        try:
+            state_preview = self.state_path.read_text()[:500]
+        except Exception:
+            pass
+
+        reporter = IssueReporter()
+        reporter.save_local_issue(
+            title=f"State corruption: {error_type}",
+            description=(
+                f"state.json failed to load and was renamed to .corrupt.\n\n"
+                f"Error: {error_detail[:500]}\n\n"
+                f"State preview:\n```\n{state_preview}\n```"
+            ),
+            category="bug",
+            context={
+                "error_type": error_type,
+                "state_path": str(self.state_path),
+            },
+        )
 
     def save(self, state: AnalysisState) -> None:
         """Persist state atomically."""

@@ -9,7 +9,9 @@ from chat_retro.hooks import (
     _hash_path,
     audit_logger,
     block_external_writes,
+    debug_logger,
     state_mutation_logger,
+    validate_state_json_write,
     HOOK_MATCHERS,
 )
 
@@ -38,9 +40,9 @@ class TestAuditLogger:
     @pytest.fixture
     def log_dir(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         """Set up temporary log directory."""
-        chat_retro_dir = tmp_path / ".chat-retro"
+        logs_dir = tmp_path / ".chat-retro-runtime" / "logs"
         monkeypatch.chdir(tmp_path)
-        return chat_retro_dir
+        return logs_dir
 
     @pytest.mark.asyncio
     async def test_logs_tool_name(self, log_dir: Path):
@@ -54,7 +56,7 @@ class TestAuditLogger:
         result = await audit_logger(input_data, "tool-use-1", None)
 
         assert result == {}
-        log_file = log_dir / "audit.log"
+        log_file = log_dir / "audit.jsonl"
         assert log_file.exists()
 
         log_entry = json.loads(log_file.read_text().strip())
@@ -71,7 +73,7 @@ class TestAuditLogger:
 
         await audit_logger(input_data, None, None)
 
-        log_file = log_dir / "audit.log"
+        log_file = log_dir / "audit.jsonl"
         log_entry = json.loads(log_file.read_text().strip())
 
         # Should have file_hash, not file_path
@@ -90,7 +92,7 @@ class TestAuditLogger:
 
         await audit_logger(input_data, None, None)
 
-        log_file = log_dir / "audit.log"
+        log_file = log_dir / "audit.jsonl"
         log_entry = json.loads(log_file.read_text().strip())
         assert "file_hash" in log_entry
 
@@ -101,7 +103,7 @@ class TestAuditLogger:
 
         await audit_logger(input_data, None, None)
 
-        log_file = log_dir / "audit.log"
+        log_file = log_dir / "audit.jsonl"
         log_entry = json.loads(log_file.read_text().strip())
         assert "timestamp" in log_entry
 
@@ -109,13 +111,20 @@ class TestAuditLogger:
 class TestBlockExternalWrites:
     """Test block_external_writes hook."""
 
+    @pytest.fixture(autouse=True)
+    def use_tmp_dir(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        """Run tests in a temporary directory for path resolution."""
+        (tmp_path / ".chat-retro-runtime").mkdir()
+        (tmp_path / ".chat-retro-runtime" / "outputs").mkdir()
+        monkeypatch.chdir(tmp_path)
+
     @pytest.mark.asyncio
     async def test_allows_outputs_directory(self):
-        """Allows writes to ./outputs/."""
+        """Allows writes to .chat-retro-runtime/outputs/."""
         input_data = {
             "hook_event_name": "PreToolUse",
             "tool_name": "Write",
-            "tool_input": {"file_path": "./outputs/report.html"},
+            "tool_input": {"file_path": "./.chat-retro-runtime/outputs/report.html"},
         }
 
         result = await block_external_writes(input_data, None, None)
@@ -123,23 +132,23 @@ class TestBlockExternalWrites:
 
     @pytest.mark.asyncio
     async def test_allows_state_json(self):
-        """Allows writes to state.json."""
+        """Allows writes to analysis.json."""
         input_data = {
             "hook_event_name": "PreToolUse",
             "tool_name": "Edit",
-            "tool_input": {"file_path": "./state.json"},
+            "tool_input": {"file_path": "./.chat-retro-runtime/state/analysis.json"},
         }
 
         result = await block_external_writes(input_data, None, None)
         assert result == {}
 
     @pytest.mark.asyncio
-    async def test_allows_chat_retro_directory(self):
-        """Allows writes to ./.chat-retro/."""
+    async def test_allows_chat_retro_runtime_directory(self):
+        """Allows writes to ./.chat-retro-runtime/."""
         input_data = {
             "hook_event_name": "PreToolUse",
             "tool_name": "Write",
-            "tool_input": {"file_path": "./.chat-retro/sessions/abc.json"},
+            "tool_input": {"file_path": "./.chat-retro-runtime/resume-session.json"},
         }
 
         result = await block_external_writes(input_data, None, None)
@@ -168,6 +177,33 @@ class TestBlockExternalWrites:
             "hook_event_name": "PreToolUse",
             "tool_name": "Write",
             "tool_input": {"file_path": "../outside/file.txt"},
+        }
+
+        result = await block_external_writes(input_data, None, None)
+        assert "hookSpecificOutput" in result
+        assert result["hookSpecificOutput"]["permissionDecision"] == "deny"
+
+    @pytest.mark.asyncio
+    async def test_blocks_traversal_within_allowed_prefix(self):
+        """Blocks path traversal attacks that start with allowed prefix."""
+        # This would pass a naive prefix check but resolves outside allowed dirs
+        input_data = {
+            "hook_event_name": "PreToolUse",
+            "tool_name": "Write",
+            "tool_input": {"file_path": ".chat-retro-runtime/../secret.txt"},
+        }
+
+        result = await block_external_writes(input_data, None, None)
+        assert "hookSpecificOutput" in result
+        assert result["hookSpecificOutput"]["permissionDecision"] == "deny"
+
+    @pytest.mark.asyncio
+    async def test_blocks_deep_traversal_attack(self):
+        """Blocks deep traversal attacks."""
+        input_data = {
+            "hook_event_name": "PreToolUse",
+            "tool_name": "Write",
+            "tool_input": {"file_path": "./.chat-retro-runtime/../../../etc/passwd"},
         }
 
         result = await block_external_writes(input_data, None, None)
@@ -217,18 +253,18 @@ class TestStateMutationLogger:
     @pytest.fixture
     def log_dir(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         """Set up temporary log directory."""
-        chat_retro_dir = tmp_path / ".chat-retro"
+        logs_dir = tmp_path / ".chat-retro-runtime" / "logs"
         monkeypatch.chdir(tmp_path)
-        return chat_retro_dir
+        return logs_dir
 
     @pytest.mark.asyncio
-    async def test_logs_state_json_edits(self, log_dir: Path):
-        """Logs Edit operations on state.json."""
+    async def test_logs_analysis_json_edits(self, log_dir: Path):
+        """Logs Edit operations on analysis.json."""
         input_data = {
             "tool_name": "Edit",
             "session_id": "session-456",
             "tool_input": {
-                "file_path": "./state.json",
+                "file_path": "./.chat-retro-runtime/state/analysis.json",
                 "old_string": "old content",
                 "new_string": "new content here",
             },
@@ -237,7 +273,7 @@ class TestStateMutationLogger:
         result = await state_mutation_logger(input_data, "tool-use-2", None)
 
         assert result == {}
-        log_file = log_dir / "state-mutations.log"
+        log_file = log_dir / "state-mutations.jsonl"
         assert log_file.exists()
 
         log_entry = json.loads(log_file.read_text().strip())
@@ -251,22 +287,22 @@ class TestStateMutationLogger:
         """Ignores non-Edit tools."""
         input_data = {
             "tool_name": "Write",
-            "tool_input": {"file_path": "./state.json"},
+            "tool_input": {"file_path": "./.chat-retro-runtime/state/analysis.json"},
         }
 
         result = await state_mutation_logger(input_data, None, None)
 
         assert result == {}
-        log_file = log_dir / "state-mutations.log"
+        log_file = log_dir / "state-mutations.jsonl"
         assert not log_file.exists()
 
     @pytest.mark.asyncio
     async def test_ignores_non_state_files(self, log_dir: Path):
-        """Ignores edits to files other than state.json."""
+        """Ignores edits to files other than analysis.json."""
         input_data = {
             "tool_name": "Edit",
             "tool_input": {
-                "file_path": "./outputs/report.html",
+                "file_path": "./.chat-retro-runtime/outputs/report.html",
                 "old_string": "x",
                 "new_string": "y",
             },
@@ -275,7 +311,7 @@ class TestStateMutationLogger:
         result = await state_mutation_logger(input_data, None, None)
 
         assert result == {}
-        log_file = log_dir / "state-mutations.log"
+        log_file = log_dir / "state-mutations.jsonl"
         assert not log_file.exists()
 
 
@@ -308,3 +344,219 @@ class TestHookMatchers:
             hook_funcs.extend(matcher.hooks)
         assert audit_logger in hook_funcs
         assert state_mutation_logger in hook_funcs
+
+
+class TestDebugLogger:
+    """Test debug_logger hook."""
+
+    @pytest.fixture
+    def log_dir(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        """Set up temp directory for debug logs."""
+        logs_dir = tmp_path / ".chat-retro-runtime" / "logs"
+        monkeypatch.chdir(tmp_path)
+        return logs_dir
+
+    @pytest.mark.asyncio
+    async def test_logs_full_tool_input(self, log_dir: Path):
+        """Debug log includes full tool_input."""
+        input_data = {
+            "tool_name": "Edit",
+            "session_id": "session-123",
+            "tool_input": {
+                "file_path": "./.chat-retro-runtime/state/analysis.json",
+                "old_string": "old content",
+                "new_string": "new content",
+            },
+        }
+
+        await debug_logger(input_data, "tool-1", None)
+
+        log_file = log_dir / "debug.jsonl"
+        assert log_file.exists()
+        entry = json.loads(log_file.read_text().strip())
+        assert entry["tool_input"]["old_string"] == "old content"
+        assert entry["tool_input"]["new_string"] == "new content"
+        assert entry["file_path"] == "./.chat-retro-runtime/state/analysis.json"
+        assert entry["tool_use_id"] == "tool-1"
+
+    @pytest.mark.asyncio
+    async def test_logs_tool_response(self, log_dir: Path):
+        """Debug log includes tool_response."""
+        input_data = {
+            "tool_name": "Read",
+            "session_id": "session-456",
+            "tool_response": {"content": "file contents here", "lines": 50},
+        }
+
+        await debug_logger(input_data, None, None)
+
+        log_file = log_dir / "debug.jsonl"
+        assert log_file.exists()
+        entry = json.loads(log_file.read_text().strip())
+        assert entry["tool_response"]["content"] == "file contents here"
+        assert entry["tool_response"]["lines"] == 50
+
+    @pytest.mark.asyncio
+    async def test_logs_unhashed_path(self, log_dir: Path):
+        """Debug log includes unhashed file path."""
+        input_data = {
+            "tool_name": "Read",
+            "tool_input": {"path": "/full/path/to/file.py"},
+        }
+
+        await debug_logger(input_data, None, None)
+
+        log_file = log_dir / "debug.jsonl"
+        entry = json.loads(log_file.read_text().strip())
+        # Debug log should have full path, not hashed
+        assert entry["file_path"] == "/full/path/to/file.py"
+
+    @pytest.mark.asyncio
+    async def test_handles_non_serializable_values(self, log_dir: Path):
+        """Debug log handles non-JSON-serializable values via default=str."""
+        from datetime import datetime
+
+        input_data = {
+            "tool_name": "Test",
+            "tool_input": {"timestamp": datetime(2025, 1, 1, 12, 0, 0)},
+        }
+
+        # Should not raise, uses default=str
+        await debug_logger(input_data, None, None)
+
+        log_file = log_dir / "debug.jsonl"
+        assert log_file.exists()
+        entry = json.loads(log_file.read_text().strip())
+        assert "2025-01-01" in entry["tool_input"]["timestamp"]
+
+
+class TestValidateStateJsonWrite:
+    """Test validate_state_json_write hook."""
+
+    @pytest.mark.asyncio
+    async def test_allows_valid_analysis_json(self):
+        """Allows valid analysis.json write."""
+        valid_content = json.dumps({
+            "schema_version": 1,
+            "meta": {
+                "created": "2025-01-01T00:00:00",
+                "last_updated": "2025-01-01T00:00:00",
+            },
+            "patterns": [
+                {"id": "p1", "type": "theme", "label": "Test", "confidence": 0.8}
+            ],
+        })
+        input_data = {
+            "hook_event_name": "PreToolUse",
+            "tool_name": "Write",
+            "tool_input": {"file_path": "./.chat-retro-runtime/state/analysis.json", "content": valid_content},
+        }
+
+        result = await validate_state_json_write(input_data, None, None)
+        assert result == {}
+
+    @pytest.mark.asyncio
+    async def test_blocks_invalid_json(self):
+        """Blocks write with invalid JSON content."""
+        input_data = {
+            "hook_event_name": "PreToolUse",
+            "tool_name": "Write",
+            "tool_input": {"file_path": "./.chat-retro-runtime/state/analysis.json", "content": "not valid json"},
+        }
+
+        result = await validate_state_json_write(input_data, None, None)
+        assert "hookSpecificOutput" in result
+        assert result["hookSpecificOutput"]["permissionDecision"] == "deny"
+        assert "not valid JSON" in result["hookSpecificOutput"]["permissionDecisionReason"]
+
+    @pytest.mark.asyncio
+    async def test_blocks_missing_schema_version(self):
+        """Blocks write missing schema_version."""
+        content = json.dumps({"meta": {}, "patterns": []})
+        input_data = {
+            "hook_event_name": "PreToolUse",
+            "tool_name": "Write",
+            "tool_input": {"file_path": "./.chat-retro-runtime/state/analysis.json", "content": content},
+        }
+
+        result = await validate_state_json_write(input_data, None, None)
+        assert result["hookSpecificOutput"]["permissionDecision"] == "deny"
+        assert "schema_version" in result["hookSpecificOutput"]["permissionDecisionReason"]
+
+    @pytest.mark.asyncio
+    async def test_blocks_patterns_as_dict(self):
+        """Blocks write where patterns is a dict instead of list."""
+        content = json.dumps({
+            "schema_version": 1,
+            "meta": {},
+            "patterns": {"p1": {"label": "Test"}},  # Dict, not list!
+        })
+        input_data = {
+            "hook_event_name": "PreToolUse",
+            "tool_name": "Write",
+            "tool_input": {"file_path": "./.chat-retro-runtime/state/analysis.json", "content": content},
+        }
+
+        result = await validate_state_json_write(input_data, None, None)
+        assert result["hookSpecificOutput"]["permissionDecision"] == "deny"
+        assert "must be a list" in result["hookSpecificOutput"]["permissionDecisionReason"]
+
+    @pytest.mark.asyncio
+    async def test_blocks_confidence_out_of_range(self):
+        """Blocks write with confidence > 1.0."""
+        content = json.dumps({
+            "schema_version": 1,
+            "meta": {},
+            "patterns": [{"id": "p1", "confidence": 1.5}],
+        })
+        input_data = {
+            "hook_event_name": "PreToolUse",
+            "tool_name": "Write",
+            "tool_input": {"file_path": "./.chat-retro-runtime/state/analysis.json", "content": content},
+        }
+
+        result = await validate_state_json_write(input_data, None, None)
+        assert result["hookSpecificOutput"]["permissionDecision"] == "deny"
+        assert "between 0.0 and 1.0" in result["hookSpecificOutput"]["permissionDecisionReason"]
+
+    @pytest.mark.asyncio
+    async def test_blocks_invalid_pattern_type(self):
+        """Blocks write with invalid pattern type."""
+        content = json.dumps({
+            "schema_version": 1,
+            "meta": {},
+            "patterns": [{"id": "p1", "type": "invalid_type"}],
+        })
+        input_data = {
+            "hook_event_name": "PreToolUse",
+            "tool_name": "Write",
+            "tool_input": {"file_path": "./.chat-retro-runtime/state/analysis.json", "content": content},
+        }
+
+        result = await validate_state_json_write(input_data, None, None)
+        assert result["hookSpecificOutput"]["permissionDecision"] == "deny"
+        assert "must be one of" in result["hookSpecificOutput"]["permissionDecisionReason"]
+
+    @pytest.mark.asyncio
+    async def test_ignores_non_analysis_json_writes(self):
+        """Ignores writes to other files."""
+        input_data = {
+            "hook_event_name": "PreToolUse",
+            "tool_name": "Write",
+            "tool_input": {"file_path": "./.chat-retro-runtime/outputs/report.html", "content": "not json"},
+        }
+
+        result = await validate_state_json_write(input_data, None, None)
+        assert result == {}
+
+    @pytest.mark.asyncio
+    async def test_ignores_edit_tool(self):
+        """Ignores Edit operations (only validates Write)."""
+        input_data = {
+            "hook_event_name": "PreToolUse",
+            "tool_name": "Edit",
+            "tool_input": {"file_path": "./.chat-retro-runtime/state/analysis.json", "content": "invalid"},
+        }
+
+        result = await validate_state_json_write(input_data, None, None)
+        assert result == {}

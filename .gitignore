@@ -13,9 +13,23 @@ wheels/
 # Virtual environments
 .venv
 
-# Private Data
-state.json*
-.chat-retro/
+# Runtime data - ignore all, whitelist safe (privacy-first)
+# See docs/reference/runtime-files.md for privacy model
+.chat-retro-runtime/
+# Whitelist dirs, ignore contents, then whitelist safe files
+!.chat-retro-runtime/logs/
+!.chat-retro-runtime/outputs/
+!.chat-retro-runtime/issues/
+!.chat-retro-runtime/feedback/
+.chat-retro-runtime/logs/*
+.chat-retro-runtime/outputs/*
+.chat-retro-runtime/issues/*
+.chat-retro-runtime/feedback/*
+# Safe files only
+!.chat-retro-runtime/logs/audit.jsonl
+!.chat-retro-runtime/logs/metrics.jsonl
+!.chat-retro-runtime/*/.gitkeep
+
+# User data
 __data__/
 *.zip
-outputs/

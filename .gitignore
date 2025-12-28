@@ -1,6 +1,7 @@
-# Claude Code (allow shared settings)
+# Claude Code (allow shared settings and agents)
 .claude/*
 !.claude/settings.json
+!.claude/agents/
 
 # Python-generated files
 __pycache__/
@@ -20,17 +21,15 @@ wheels/
 !.chat-retro-runtime/logs/
 !.chat-retro-runtime/outputs/
 !.chat-retro-runtime/issues/
+!.chat-retro-runtime/issue-drafts/
 !.chat-retro-runtime/feedback/
 .chat-retro-runtime/logs/*
 .chat-retro-runtime/outputs/*
 .chat-retro-runtime/issues/*
+.chat-retro-runtime/issue-drafts/*
 .chat-retro-runtime/feedback/*
 # Safe and useful files only (debug_* files are public but not useful to track)
 !.chat-retro-runtime/logs/metrics.jsonl
 !.chat-retro-runtime/issues/issue_*.json
 !.chat-retro-runtime/issues/CHANGELOG.md
 !.chat-retro-runtime/*/.gitkeep
-
-# User data
-__data__/
-*.zip

@@ -72,6 +72,7 @@ class StateManager:
     state_path: Path = field(
         default_factory=lambda: Path(".chat-retro-runtime/state/analysis.json")
     )
+    report_corruption: bool = True  # Set False in tests to avoid leaking drafts
 
     def load(self) -> AnalysisState | None:
         """Load existing state with migration and corruption recovery."""
@@ -97,6 +98,9 @@ class StateManager:
 
     def _report_corruption(self, error_type: str, error_detail: str) -> None:
         """Auto-create issue when state.json fails validation."""
+        if not self.report_corruption:
+            return
+
         from shared import IssueReporter, IssueSeverity
 
         # Capture preview of corrupt content for debugging

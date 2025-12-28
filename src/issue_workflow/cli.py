@@ -1,27 +1,24 @@
-"""CLI entry point for issue-workflow tool."""
+"""CLI entry point for issue-workflow tool.
+
+Uses Claude Code CLI for agent execution (subscription pricing).
+See ADR-006 for migration rationale.
+"""
 
 import argparse
-import asyncio
 import json
 import sys
 from pathlib import Path
 
 from shared import IssueReporter, IssueStatus
 
+from .state_manager import RUNTIME_PATHS
 from .workflow import IssueWorkflow
-
-
-# Runtime directories needed for issue reporting
-RUNTIME_DIRS = [
-    Path(".chat-retro-runtime"),
-    Path(".chat-retro-runtime/issue-drafts"),
-]
 
 
 def ensure_runtime_dirs() -> None:
     """Create runtime directories if they don't exist."""
-    for dir_path in RUNTIME_DIRS:
-        dir_path.mkdir(parents=True, exist_ok=True)
+    for key in ("base", "drafts", "issues"):
+        RUNTIME_PATHS[key].mkdir(parents=True, exist_ok=True)
 
 
 def main() -> int:
@@ -33,9 +30,14 @@ def main() -> int:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # process - full pipeline
-    subparsers.add_parser(
+    process_parser = subparsers.add_parser(
         "process",
         help="Run full pipeline: triage → cluster → prioritize → resolve",
+    )
+    process_parser.add_argument(
+        "-y", "--yes",
+        action="store_true",
+        help="Auto-approve all human gates (non-interactive mode)",
     )
 
     # list - show issues
@@ -71,14 +73,16 @@ def main() -> int:
     subparsers.add_parser("drafts", help="List pending draft issues")
 
     args = parser.parse_args()
-    workflow = IssueWorkflow()
 
     if args.command == "process":
-        result = asyncio.run(workflow.process())
+        workflow = IssueWorkflow(auto_approve=args.yes)
+        result = workflow.process()
         print(f"\n{result.message}")
         return 0 if result.success else 1
 
-    elif args.command == "list":
+    workflow = IssueWorkflow()
+
+    if args.command == "list":
         status = IssueStatus(args.status) if args.status else None
         issues = workflow.list_issues(status)
 
@@ -89,8 +93,11 @@ def main() -> int:
         print(f"\n{'ID':<14} {'Status':<12} {'Severity':<10} {'Title'}")
         print("-" * 70)
         for issue in issues:
-            title = (issue.sanitized_title or issue.title)[:35]
-            print(f"{issue.id:<14} {issue.status.value:<12} {issue.severity.value:<10} {title}")
+            title = issue.title[:35]
+            # Handle both enum and string (due to use_enum_values=True)
+            issue_status = str(issue.status.value if hasattr(issue.status, "value") else issue.status)
+            issue_severity = str(issue.severity.value if hasattr(issue.severity, "value") else issue.severity) if issue.severity else "unknown"
+            print(f"{issue.id:<14} {issue_status:<12} {issue_severity:<10} {title}")
         print(f"\nTotal: {len(issues)} issues")
         return 0
 
@@ -113,7 +120,7 @@ def main() -> int:
         return 0
 
     elif args.command == "approve":
-        result = asyncio.run(workflow.approve_cluster(args.cluster_id))
+        result = workflow.approve_cluster(args.cluster_id)
         print(result.message)
         return 0 if result.success else 1
 

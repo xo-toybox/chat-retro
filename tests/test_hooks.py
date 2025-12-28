@@ -297,7 +297,7 @@ class TestHookMatchers:
         hooks = HOOK_MATCHERS["PreToolUse"]
         hook_funcs = []
         for matcher in hooks:
-            hook_funcs.extend(matcher.get("hooks", []))
+            hook_funcs.extend(matcher.hooks)
         assert block_external_writes in hook_funcs
 
     def test_posttooluse_has_audit_logger(self):
@@ -305,6 +305,6 @@ class TestHookMatchers:
         hooks = HOOK_MATCHERS["PostToolUse"]
         hook_funcs = []
         for matcher in hooks:
-            hook_funcs.extend(matcher.get("hooks", []))
+            hook_funcs.extend(matcher.hooks)
         assert audit_logger in hook_funcs
         assert state_mutation_logger in hook_funcs

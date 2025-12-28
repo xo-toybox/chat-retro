@@ -1,6 +1,8 @@
 """Hooks for audit logging, write protection, and state mutation tracking."""
 
 
+from claude_agent_sdk import HookMatcher
+
 import hashlib
 import json
 from datetime import datetime
@@ -134,9 +136,9 @@ async def state_mutation_logger(
 # Hook matchers for SDK configuration
 HOOK_MATCHERS = {
     "PreToolUse": [
-        {"matcher": "Write|Edit", "hooks": [block_external_writes]},
+        HookMatcher(matcher="Write|Edit", hooks=[block_external_writes]),
     ],
     "PostToolUse": [
-        {"hooks": [audit_logger, state_mutation_logger]},
+        HookMatcher(hooks=[audit_logger, state_mutation_logger]),
     ],
 }

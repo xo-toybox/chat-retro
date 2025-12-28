@@ -39,3 +39,9 @@ User input → SessionManager → ClaudeSDKClient → Agent explores export with
 ## Development Principle
 
 "Measure before changing." Agent output is non-deterministic. "it seems better" is not evidence.
+
+## Security Patterns
+
+<!-- Promote to LEARNINGS.md if any of the learnings sections grows beyond 5 total items together -->
+
+- **Path validation**: Never use string prefix checks for path access control. Always resolve to absolute paths first with `Path.resolve()`, then use `is_relative_to()` for containment checks. See `hooks.py:block_external_writes()`.

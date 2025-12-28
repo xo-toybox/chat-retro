@@ -218,10 +218,15 @@ class TestGetAgentsDict:
     def test_contains_all_agents(self):
         """Contains all registered agents."""
         result = get_agents_dict()
+        # Analysis agents
         assert "topic-extractor" in result
         assert "sentiment-tracker" in result
         assert "pattern-detector" in result
         assert "temporal-analyst" in result
+        # Insight agents
+        assert "prompt-improver" in result
+        assert "repetition-detector" in result
+        assert "usage-optimizer" in result
 
     def test_agent_format_is_dict(self):
         """Each agent is converted to dict format."""

@@ -7,6 +7,12 @@ from importlib import resources
 from pathlib import Path
 from typing import Any
 
+from chat_retro.interactive import (
+    get_interactive_css,
+    get_interactive_init_js,
+    get_interactive_js,
+)
+
 
 class ArtifactGenerator:
     """Generate offline-capable HTML and markdown artifacts."""
@@ -33,6 +39,11 @@ class ArtifactGenerator:
         data: dict[str, Any],
         visualization_code: str = "",
         include_d3: bool = True,
+        interactive: bool = False,
+        include_filters: bool = True,
+        include_search: bool = True,
+        include_details: bool = True,
+        include_annotations: bool = True,
     ) -> str:
         """Generate self-contained HTML with inlined dependencies.
 
@@ -41,6 +52,11 @@ class ArtifactGenerator:
             data: Analysis data to embed as JSON
             visualization_code: JavaScript code for visualization
             include_d3: Whether to include D3.js library
+            interactive: Whether to include interactive components
+            include_filters: Include filter panel (if interactive)
+            include_search: Include search (if interactive)
+            include_details: Include detail modal (if interactive)
+            include_annotations: Include annotations (if interactive)
 
         Returns:
             Complete HTML string
@@ -48,6 +64,26 @@ class ArtifactGenerator:
         d3_script = self._load_d3_js() if include_d3 else ""
         data_json = json.dumps(data, indent=2, default=str)
         timestamp = datetime.now().isoformat()
+
+        # Interactive components
+        interactive_css = ""
+        interactive_js = ""
+        interactive_init = ""
+        controls_html = ""
+
+        if interactive:
+            interactive_css = get_interactive_css()
+            interactive_js = get_interactive_js(
+                include_filters=include_filters,
+                include_search=include_search,
+                include_details=include_details,
+                include_annotations=include_annotations,
+            )
+            interactive_init = get_interactive_init_js(
+                include_details=include_details,
+                include_annotations=include_annotations,
+            )
+            controls_html = '<div id="controls"></div>'
 
         return f"""\
 <!DOCTYPE html>
@@ -77,16 +113,23 @@ class ArtifactGenerator:
       min-height: 400px;
     }}
     .error {{ color: #c00; padding: 1rem; }}
+    {interactive_css}
   </style>
 </head>
 <body>
   <h1>{title}</h1>
   <div class="meta">Generated: {timestamp}</div>
+  {controls_html}
   <div id="visualization"></div>
 
   <script>
     // D3.js library (inlined for offline use)
     {d3_script}
+  </script>
+  <script>
+    // Interactive components
+    {interactive_js}
+    {interactive_init}
   </script>
   <script>
     // Analysis data

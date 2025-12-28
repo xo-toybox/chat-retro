@@ -289,5 +289,12 @@ AGENTS = {
 
 
 def get_agents_dict() -> dict[str, dict[str, Any]]:
-    """Get agents in format suitable for ClaudeCodeOptions."""
-    return {name: agent.to_dict() for name, agent in AGENTS.items()}
+    """Get agents in format suitable for ClaudeCodeOptions.
+
+    Includes both analysis agents and insight agents.
+    """
+    from chat_retro.insights import get_insight_agents_dict
+
+    result = {name: agent.to_dict() for name, agent in AGENTS.items()}
+    result.update(get_insight_agents_dict())
+    return result

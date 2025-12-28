@@ -332,7 +332,7 @@
         "Suggestions are specific and actionable",
         "Based on actual conversation patterns"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "insight-repetition-detection",
@@ -344,7 +344,7 @@
         "Groups similar queries together",
         "Suggests templates for common patterns"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "insight-usage-optimization",
@@ -356,7 +356,7 @@
         "Based on temporal and success patterns",
         "Specific to user's usage data"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "interact-filter-panel",
@@ -368,7 +368,7 @@
         "Filters update visualization in real-time",
         "Multiple filters can be combined"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "interact-search",
@@ -380,7 +380,7 @@
         "Results highlight matching patterns",
         "Search is performant on large datasets"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "interact-detail-view",
@@ -392,7 +392,7 @@
         "Modal or expansion works smoothly",
         "Example conversations are readable"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "interact-annotations",
@@ -404,7 +404,7 @@
         "Notes persist across page reloads",
         "Annotations visible in artifact"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "eval-quality-prompts",
@@ -416,7 +416,7 @@
         "User responses are captured",
         "Questions are specific to generated output"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "eval-rating-system",
@@ -428,7 +428,7 @@
         "Ratings persisted to state.json feedback section",
         "Aggregate ratings accessible"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "eval-gap-detection",
@@ -440,7 +440,7 @@
         "Gaps logged for future improvement",
         "Gap categories are structured"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "eval-feedback-aggregation",
@@ -452,7 +452,7 @@
         "Trends visible across sessions",
         "Identifies consistently low-rated features"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "eval-issue-reporter",
@@ -464,7 +464,7 @@
         "Opens GitHub issue template or logs locally",
         "Captures relevant context automatically"
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }

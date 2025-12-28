@@ -4,10 +4,11 @@ These agents analyze patterns and generate specific, actionable suggestions
 for improving AI conversation effectiveness.
 """
 
-from dataclasses import dataclass
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
+
+from chat_retro.agents import AgentDefinition
 
 
 # ============================================================================
@@ -117,31 +118,8 @@ USAGE_OPTIMIZATION_SCHEMA: dict[str, Any] = UsageOptimizationOutput.model_json_s
 # ============================================================================
 
 
-@dataclass
-class InsightAgentDefinition:
-    """Definition for an insight-generating agent."""
-
-    description: str
-    prompt: str
-    tools: list[str]
-    model: str = "sonnet"
-    output_schema: dict[str, Any] | None = None
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dict for SDK consumption."""
-        result = {
-            "description": self.description,
-            "prompt": self.prompt,
-            "tools": self.tools,
-            "model": self.model,
-        }
-        if self.output_schema:
-            result["output_schema"] = self.output_schema
-        return result
-
-
 # Prompt improvement insight agent
-PROMPT_IMPROVER = InsightAgentDefinition(
+PROMPT_IMPROVER = AgentDefinition(
     description="Generate concrete prompt improvement suggestions with before/after examples.",
     prompt="""You are a prompt engineering coach analyzing AI conversation history.
 
@@ -167,7 +145,7 @@ Your response must conform to the output schema.""",
 
 
 # Repetition detection insight agent
-REPETITION_DETECTOR = InsightAgentDefinition(
+REPETITION_DETECTOR = AgentDefinition(
     description="Identify repetitive queries and suggest templates for common patterns.",
     prompt="""You are a workflow efficiency analyst examining AI conversation history.
 
@@ -192,7 +170,7 @@ Your response must conform to the output schema.""",
 
 
 # Usage optimization insight agent
-USAGE_OPTIMIZER = InsightAgentDefinition(
+USAGE_OPTIMIZER = AgentDefinition(
     description="Generate time and context recommendations for optimal AI usage.",
     prompt="""You are a productivity analyst examining AI conversation history.
 

@@ -250,9 +250,9 @@ Your task:
 1. Identify recurring prompting patterns (effective and ineffective)
 2. Flag anti-patterns that lead to poor results
 3. Note effective techniques the user employs
-4. Suggest improvements based on observed patterns
+4. Highlight areas where improvements may be possible
 
-Be constructive. Focus on patterns with improvement potential.
+Be observational. Focus on pattern discovery, not prescriptive advice.
 Your response must conform to the output schema.""",
     tools=["Read", "Grep", "Glob"],
     model="sonnet",

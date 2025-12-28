@@ -2,6 +2,7 @@
 
 import pytest
 
+from chat_retro.agents import AgentDefinition
 from chat_retro.insights import (
     INSIGHT_AGENTS,
     PROMPT_IMPROVEMENT_SCHEMA,
@@ -11,7 +12,6 @@ from chat_retro.insights import (
     USAGE_OPTIMIZATION_SCHEMA,
     USAGE_OPTIMIZER,
     ContextRecommendation,
-    InsightAgentDefinition,
     PromptExample,
     PromptImprovement,
     PromptImprovementOutput,
@@ -177,11 +177,11 @@ class TestSchemaGeneration:
         assert "summary_bullets" in props
 
 
-class TestInsightAgentDefinition:
-    """Test InsightAgentDefinition dataclass."""
+class TestAgentDefinition:
+    """Test AgentDefinition dataclass."""
 
     def test_basic_creation(self) -> None:
-        agent = InsightAgentDefinition(
+        agent = AgentDefinition(
             description="Test agent",
             prompt="Test prompt",
             tools=["Read"],
@@ -190,7 +190,7 @@ class TestInsightAgentDefinition:
         assert agent.model == "sonnet"
 
     def test_to_dict(self) -> None:
-        agent = InsightAgentDefinition(
+        agent = AgentDefinition(
             description="Test",
             prompt="Prompt",
             tools=["Read", "Grep"],
@@ -202,7 +202,7 @@ class TestInsightAgentDefinition:
         assert "output_schema" in d
 
     def test_to_dict_without_schema(self) -> None:
-        agent = InsightAgentDefinition(
+        agent = AgentDefinition(
             description="Test",
             prompt="Prompt",
             tools=["Read"],

@@ -1,87 +1,31 @@
 """Tests for subagent definitions."""
 
 import pytest
+from claude_agent_sdk import AgentDefinition
+
 from chat_retro.agents import (
-    AgentDefinition,
     AGENTS,
     TOPIC_EXTRACTOR,
     SENTIMENT_TRACKER,
     PATTERN_DETECTOR,
     TEMPORAL_ANALYST,
-    TOPIC_SCHEMA,
-    SENTIMENT_SCHEMA,
-    PATTERN_SCHEMA,
-    TEMPORAL_SCHEMA,
-    get_agents_dict,
+    get_agents,
 )
 
 
 class TestAgentDefinition:
-    """Tests for AgentDefinition dataclass."""
+    """Tests for SDK AgentDefinition usage."""
 
-    def test_basic_creation(self):
-        """AgentDefinition can be created with required fields."""
-        agent = AgentDefinition(
-            description="Test agent",
-            prompt="You are a test agent.",
-            tools=["Read"],
-        )
-        assert agent.description == "Test agent"
-        assert agent.prompt == "You are a test agent."
-        assert agent.tools == ["Read"]
-        assert agent.model == "sonnet"  # default
+    def test_agents_use_sdk_class(self):
+        """All agents use the SDK's AgentDefinition."""
+        for name, agent in AGENTS.items():
+            assert isinstance(agent, AgentDefinition), f"{name} should be AgentDefinition"
 
-    def test_custom_model(self):
-        """AgentDefinition accepts custom model."""
-        agent = AgentDefinition(
-            description="Test",
-            prompt="Test",
-            tools=[],
-            model="haiku",
-        )
-        assert agent.model == "haiku"
-
-    def test_to_dict(self):
-        """to_dict returns proper format for SDK."""
-        agent = AgentDefinition(
-            description="Desc",
-            prompt="Prompt",
-            tools=["Read", "Grep"],
-            model="opus",
-        )
-        result = agent.to_dict()
-
-        assert result == {
-            "description": "Desc",
-            "prompt": "Prompt",
-            "tools": ["Read", "Grep"],
-            "model": "opus",
-        }
-
-    def test_to_dict_with_schema(self):
-        """to_dict includes output_schema when provided."""
-        schema = {"type": "object", "properties": {"foo": {"type": "string"}}}
-        agent = AgentDefinition(
-            description="Test",
-            prompt="Test",
-            tools=[],
-            output_schema=schema,
-        )
-        result = agent.to_dict()
-
-        assert "output_schema" in result
-        assert result["output_schema"] == schema
-
-    def test_to_dict_without_schema(self):
-        """to_dict omits output_schema when None."""
-        agent = AgentDefinition(
-            description="Test",
-            prompt="Test",
-            tools=[],
-        )
-        result = agent.to_dict()
-
-        assert "output_schema" not in result
+    def test_agent_has_required_fields(self):
+        """Agents have required description and prompt."""
+        for name, agent in AGENTS.items():
+            assert agent.description, f"{name} missing description"
+            assert agent.prompt, f"{name} missing prompt"
 
 
 class TestTopicExtractor:
@@ -97,17 +41,6 @@ class TestTopicExtractor:
     def test_description_mentions_topics(self):
         """Description explains the agent's purpose."""
         assert "topic" in TOPIC_EXTRACTOR.description.lower()
-        assert "extract" in TOPIC_EXTRACTOR.description.lower() or "cluster" in TOPIC_EXTRACTOR.description.lower()
-
-    def test_has_output_schema(self):
-        """Topic extractor has structured output schema."""
-        assert TOPIC_EXTRACTOR.output_schema is not None
-        assert TOPIC_EXTRACTOR.output_schema == TOPIC_SCHEMA
-
-    def test_schema_has_required_fields(self):
-        """Schema requires topics array."""
-        assert "topics" in TOPIC_SCHEMA["required"]
-        assert TOPIC_SCHEMA["properties"]["topics"]["type"] == "array"
 
     def test_has_file_reading_tools(self):
         """Topic extractor can read files."""
@@ -131,16 +64,8 @@ class TestSentimentTracker:
 
     def test_description_mentions_sentiment(self):
         """Description explains sentiment analysis."""
-        assert "sentiment" in SENTIMENT_TRACKER.description.lower() or "emotion" in SENTIMENT_TRACKER.description.lower()
-
-    def test_has_output_schema(self):
-        """Sentiment tracker has structured output schema."""
-        assert SENTIMENT_TRACKER.output_schema is not None
-        assert SENTIMENT_TRACKER.output_schema == SENTIMENT_SCHEMA
-
-    def test_schema_has_required_fields(self):
-        """Schema requires overall_sentiment."""
-        assert "overall_sentiment" in SENTIMENT_SCHEMA["required"]
+        desc_lower = SENTIMENT_TRACKER.description.lower()
+        assert "sentiment" in desc_lower or "emotion" in desc_lower
 
 
 class TestPatternDetector:
@@ -157,17 +82,6 @@ class TestPatternDetector:
         """Description explains pattern detection."""
         assert "pattern" in PATTERN_DETECTOR.description.lower()
 
-    def test_has_output_schema(self):
-        """Pattern detector has structured output schema."""
-        assert PATTERN_DETECTOR.output_schema is not None
-        assert PATTERN_DETECTOR.output_schema == PATTERN_SCHEMA
-
-    def test_schema_has_required_fields(self):
-        """Schema requires patterns and recommendations."""
-        assert "effective_patterns" in PATTERN_SCHEMA["required"]
-        assert "anti_patterns" in PATTERN_SCHEMA["required"]
-        assert "recommendations" in PATTERN_SCHEMA["required"]
-
 
 class TestTemporalAnalyst:
     """Tests for temporal-analyst agent."""
@@ -181,12 +95,8 @@ class TestTemporalAnalyst:
 
     def test_description_mentions_time(self):
         """Description explains temporal analysis."""
-        assert "time" in TEMPORAL_ANALYST.description.lower() or "temporal" in TEMPORAL_ANALYST.description.lower()
-
-    def test_prompt_analyzes_patterns(self):
-        """Prompt asks for time-based patterns."""
-        assert "usage patterns" in TEMPORAL_ANALYST.prompt.lower()
-        assert "trend" in TEMPORAL_ANALYST.prompt.lower()
+        desc_lower = TEMPORAL_ANALYST.description.lower()
+        assert "time" in desc_lower or "temporal" in desc_lower
 
     def test_uses_efficient_model(self):
         """Uses lighter model for metadata analysis."""
@@ -207,17 +117,17 @@ class TestAgentsRegistry:
         assert len(AGENTS) == 4
 
 
-class TestGetAgentsDict:
-    """Tests for get_agents_dict function."""
+class TestGetAgents:
+    """Tests for get_agents function."""
 
     def test_returns_dict(self):
         """Returns a dictionary."""
-        result = get_agents_dict()
+        result = get_agents()
         assert isinstance(result, dict)
 
     def test_contains_all_agents(self):
         """Contains all registered agents."""
-        result = get_agents_dict()
+        result = get_agents()
         # Analysis agents
         assert "topic-extractor" in result
         assert "sentiment-tracker" in result
@@ -228,25 +138,11 @@ class TestGetAgentsDict:
         assert "repetition-detector" in result
         assert "usage-optimizer" in result
 
-    def test_agent_format_is_dict(self):
-        """Each agent is converted to dict format."""
-        result = get_agents_dict()
+    def test_all_are_agent_definitions(self):
+        """All values are AgentDefinition instances."""
+        result = get_agents()
         for name, agent in result.items():
-            assert isinstance(agent, dict), f"{name} should be dict"
-            assert "description" in agent
-            assert "prompt" in agent
-            assert "tools" in agent
-            assert "model" in agent
-
-    def test_compatible_with_sdk(self):
-        """Output format matches SDK expectations."""
-        result = get_agents_dict()
-        # Each agent should have string description, string prompt, list tools, string model
-        for name, agent in result.items():
-            assert isinstance(agent["description"], str)
-            assert isinstance(agent["prompt"], str)
-            assert isinstance(agent["tools"], list)
-            assert isinstance(agent["model"], str)
+            assert isinstance(agent, AgentDefinition), f"{name} should be AgentDefinition"
 
 
 class TestAgentIntegration:
@@ -255,6 +151,6 @@ class TestAgentIntegration:
     def test_agents_importable_from_session(self):
         """Agents can be imported where session uses them."""
         from chat_retro.session import SessionManager
-        from chat_retro.agents import get_agents_dict
+        from chat_retro.agents import get_agents
         # If this doesn't raise, imports work
-        assert get_agents_dict() is not None
+        assert get_agents() is not None

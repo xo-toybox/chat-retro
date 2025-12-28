@@ -6,17 +6,18 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from claude_code_sdk import (
+from claude_agent_sdk import (
+    AgentDefinition,
     AssistantMessage,
     CLINotFoundError,
-    ClaudeCodeOptions,
+    ClaudeAgentOptions,
     ClaudeSDKClient,
     ProcessError,
     ResultMessage,
     TextBlock,
 )
 
-from .agents import get_agents_dict
+from .agents import get_agents
 from .hooks import HOOK_MATCHERS
 from .prompts import SYSTEM_PROMPT
 from .usage import UsageReport
@@ -44,6 +45,7 @@ class Session:
     session_id: str | None = None
     export_path: Path | None = None
     usage: UsageReport = field(default_factory=UsageReport)
+    exit_requested: bool = False
 
 
 class SessionManager:
@@ -63,15 +65,15 @@ class SessionManager:
         self.session = Session(export_path=export_path)
         self._client: ClaudeSDKClient | None = None
 
-    def _build_options(self) -> ClaudeCodeOptions:
+    def _build_options(self) -> ClaudeAgentOptions:
         """Build SDK options for this session."""
-        return ClaudeCodeOptions(
+        return ClaudeAgentOptions(
             system_prompt=SYSTEM_PROMPT,
             permission_mode="acceptEdits",
             cwd=str(self.cwd),
             resume=self.resume_id,
             hooks=HOOK_MATCHERS,
-            agents=get_agents_dict(),
+            agents=get_agents(),
         )
 
     def _save_session_id(self, session_id: str) -> None:
@@ -122,7 +124,7 @@ class SessionManager:
                         self._save_session_id(msg.session_id)
 
                 # Interactive loop
-                while True:
+                while not self.session.exit_requested:
                     try:
                         user_input = input("\nYou: ").strip()
                     except (EOFError, KeyboardInterrupt):
@@ -145,6 +147,9 @@ class SessionManager:
                         elif isinstance(msg, ResultMessage):
                             self.session.usage.update_from_result(msg)
                             self.session.usage.end_turn()
+
+                    if self.session.exit_requested:
+                        break
 
         except CLINotFoundError as e:
             self.session.usage.record_error(e)
@@ -169,6 +174,7 @@ class SessionManager:
             f.write(json.dumps(self.session.usage.detailed_summary()) + "\n")
 
     async def interrupt(self) -> None:
-        """Interrupt current agent execution."""
+        """Interrupt current agent execution and request exit."""
+        self.session.exit_requested = True
         if self._client:
             await self._client.interrupt()

@@ -36,7 +36,7 @@ status: approved
 
 ## Feature List
 
-Features tracked in `feature_list.json`. Each feature has verification steps and pass/fail status.
+Features tracked in `build-log/feature_list.json`. Each feature has verification steps and pass/fail status.
 
 ### Phase 1: Project setup
 | ID | Description | Verification |

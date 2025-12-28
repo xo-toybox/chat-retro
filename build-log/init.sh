@@ -42,4 +42,4 @@ fi
 
 echo ""
 echo "=== Setup Complete ==="
-echo "Next: Implement features from feature_list.json"
+echo "Next: Implement features from build-log/feature_list.json"

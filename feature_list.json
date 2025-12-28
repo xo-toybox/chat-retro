@@ -260,7 +260,7 @@
         "Clusters visually distinct",
         "Links show topic relationships"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "viz-length-distribution",

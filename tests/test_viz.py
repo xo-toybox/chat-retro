@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 from datetime import datetime
-from chat_retro.viz_templates import TimelineViz, HeatmapViz
+from chat_retro.viz_templates import TimelineViz, HeatmapViz, TopicClusterViz
 from chat_retro.artifacts import ArtifactGenerator
 
 
@@ -277,3 +277,135 @@ class TestHeatmapIntegration:
         content = path.read_text()
         assert "Usage Heatmap" in content
         assert '"heatmap"' in content
+
+
+class TestTopicClusterViz:
+    """Tests for TopicClusterViz visualization."""
+
+    def test_prepare_data_empty(self):
+        """Empty patterns list returns empty nodes and links."""
+        result = TopicClusterViz.prepare_data([])
+        assert result == {"nodes": [], "links": []}
+
+    def test_prepare_data_creates_nodes(self):
+        """Patterns are converted to nodes with correct structure."""
+        patterns = [
+            {"label": "Python", "type": "theme", "conversation_ids": ["c1", "c2", "c3"]},
+            {"label": "Debugging", "type": "theme", "conversation_ids": ["c1", "c4"]},
+            {"label": "API design", "type": "skill", "conversation_ids": ["c5"]},
+        ]
+        result = TopicClusterViz.prepare_data(patterns)
+
+        assert len(result["nodes"]) == 3
+
+        # Check node structure
+        python_node = next(n for n in result["nodes"] if n["id"] == "Python")
+        assert python_node["count"] == 3
+        assert python_node["type"] == "theme"
+        assert "group" in python_node
+
+    def test_prepare_data_groups_by_type(self):
+        """Patterns of same type get same group number."""
+        patterns = [
+            {"label": "A", "type": "theme", "conversation_ids": []},
+            {"label": "B", "type": "theme", "conversation_ids": []},
+            {"label": "C", "type": "skill", "conversation_ids": []},
+        ]
+        result = TopicClusterViz.prepare_data(patterns)
+
+        groups = {n["id"]: n["group"] for n in result["nodes"]}
+        assert groups["A"] == groups["B"]  # Same type
+        assert groups["A"] != groups["C"]  # Different type
+
+    def test_prepare_data_creates_links_from_shared_conversations(self):
+        """Patterns sharing conversations are linked."""
+        patterns = [
+            {"label": "A", "type": "theme", "conversation_ids": ["c1", "c2"]},
+            {"label": "B", "type": "theme", "conversation_ids": ["c1"]},  # Shares c1 with A
+            {"label": "C", "type": "skill", "conversation_ids": ["c3"]},  # No shared convos
+        ]
+        result = TopicClusterViz.prepare_data(patterns)
+
+        # Should have one link between A and B
+        assert len(result["links"]) == 1
+        link = result["links"][0]
+        assert set([link["source"], link["target"]]) == {"A", "B"}
+        assert link["value"] == 1
+
+    def test_prepare_data_counts_multiple_shared_conversations(self):
+        """Link value reflects number of shared conversations."""
+        patterns = [
+            {"label": "A", "type": "theme", "conversation_ids": ["c1", "c2", "c3"]},
+            {"label": "B", "type": "theme", "conversation_ids": ["c1", "c2"]},  # Shares c1, c2
+        ]
+        result = TopicClusterViz.prepare_data(patterns)
+
+        assert len(result["links"]) == 1
+        assert result["links"][0]["value"] == 2  # Two shared conversations
+
+    def test_prepare_data_skips_empty_labels(self):
+        """Patterns without labels are skipped."""
+        patterns = [
+            {"label": "Valid", "type": "theme", "conversation_ids": ["c1"]},
+            {"label": "", "type": "theme", "conversation_ids": ["c2"]},
+            {"type": "theme", "conversation_ids": ["c3"]},  # No label key
+        ]
+        result = TopicClusterViz.prepare_data(patterns)
+        assert len(result["nodes"]) == 1
+
+    def test_get_js_code_returns_string(self):
+        """JS code is returned as string."""
+        code = TopicClusterViz.get_js_code()
+        assert isinstance(code, str)
+        assert len(code) > 100
+
+    def test_get_js_code_contains_force_simulation(self):
+        """JS code uses D3 force simulation."""
+        code = TopicClusterViz.get_js_code()
+        assert "d3.forceSimulation" in code
+        assert "d3.forceLink" in code
+        assert "d3.forceManyBody" in code
+
+    def test_get_js_code_supports_dragging(self):
+        """JS code includes drag behavior."""
+        code = TopicClusterViz.get_js_code()
+        assert "d3.drag" in code
+        assert "dragstarted" in code
+        assert "dragged" in code
+        assert "dragended" in code
+
+    def test_get_js_code_references_data(self):
+        """JS code references DATA.nodes and DATA.links."""
+        code = TopicClusterViz.get_js_code()
+        assert "DATA.nodes" in code
+        assert "DATA.links" in code
+
+
+class TestTopicClusterIntegration:
+    """Integration tests for topic clusters with ArtifactGenerator."""
+
+    def test_generate_html_with_clusters(self, tmp_path):
+        """Topic clusters can be integrated with ArtifactGenerator."""
+        generator = ArtifactGenerator(output_dir=tmp_path)
+
+        patterns = [
+            {"label": "Python", "type": "language", "conversation_ids": ["c1", "c2", "c3", "c4", "c5"]},
+            {"label": "JavaScript", "type": "language", "conversation_ids": ["c2", "c6", "c7"]},
+            {"label": "Debugging", "type": "activity", "conversation_ids": ["c1", "c2", "c3"]},
+            {"label": "Testing", "type": "activity", "conversation_ids": ["c4", "c5"]},
+            {"label": "API design", "type": "topic", "conversation_ids": ["c1", "c6"]},
+        ]
+        data = TopicClusterViz.prepare_data(patterns)
+
+        path = generator.save_html(
+            filename="clusters-test",
+            title="Topic Clusters",
+            data=data,
+            visualization_code=TopicClusterViz.get_js_code(),
+        )
+
+        assert path.exists()
+        content = path.read_text()
+        assert "Topic Clusters" in content
+        assert '"nodes"' in content
+        assert '"links"' in content

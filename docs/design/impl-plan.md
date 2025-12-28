@@ -18,88 +18,74 @@ status: approved
 
 ## Phases
 
-| # | Phase | Type | Mode | Parallel Work | Status |
-|---|-------|------|------|---------------|--------|
-| 1 | Project setup | Mechanical | Direct | - | pending |
-| 2 | State schema (Pydantic models) | Mechanical | Ralph | Tester subagent | pending |
-| 3 | Hooks (audit + write protection) | Mechanical | Ralph | Tester subagent | pending |
-| 4 | Session manager | **Judgment** | Human gate | - | pending |
-| 5 | CLI entry point | Mechanical | Ralph | - | pending |
-| 6 | Artifact generator | Mechanical | Ralph | Tester subagent | pending |
-| 7 | System prompts | **Judgment** | Human gate | - | pending |
-| 8 | Integration test | **Judgment** | Human gate | - | pending |
+| # | Phase | Type | Mode | Status |
+|---|-------|------|------|--------|
+| 1 | Project setup | Mechanical | Direct | pending |
+| 2 | State schema | Mechanical | Ralph | pending |
+| 3 | Hooks | Mechanical | Ralph | pending |
+| 4 | Session manager | **Judgment** | Human gate | pending |
+| 5 | CLI entry point | Mechanical | Ralph | pending |
+| 6 | Artifact generator | Mechanical | Ralph | pending |
+| 7 | System prompts | **Judgment** | Human gate | pending |
+| 8 | Integration test | **Judgment** | Human gate | pending |
 
-## Phase Details
+## Feature List
+
+Features tracked in `feature_list.json`. Each feature has verification steps and pass/fail status.
 
 ### Phase 1: Project setup
-- Fix pyproject.toml (remove unused deps, add claude-agent-sdk)
-- Create src/chat_retro/__init__.py, __main__.py
-- Create tests/ directory structure
-- Ensure structure matches design doc
+| ID | Description | Verification |
+|----|-------------|--------------|
+| proj-setup | Fix pyproject.toml, create package structure | `uv sync` succeeds, `__init__.py` exists |
 
-### Phase 2: State schema (Ralph-able)
-- Pydantic models: `AnalysisState`, `StateMeta`, `Pattern`, `UserPreferences`, `SnapshotRef`
-- Validation with schema_version and migration support
-- Atomic save with tmp file rename
-- Corruption recovery with backup
-- **Completion:** `uv run pytest tests/test_state.py` exits 0
+### Phase 2: State schema
+| ID | Description | Verification |
+|----|-------------|--------------|
+| state-models | Pydantic models for AnalysisState, StateMeta, Pattern, etc. | Import succeeds, validates sample JSON |
+| state-manager | StateManager with load/save/merge, atomic writes, corruption recovery | `pytest tests/test_state.py` exits 0 |
 
-### Phase 3: Hooks (Ralph-able)
-- `audit_logger` - log tool usage without content
-- `block_external_writes` - prevent writes outside allowed paths
-- `state_mutation_logger` - track Edit operations on state.json
-- **Completion:** `uv run pytest tests/test_hooks.py` exits 0
+### Phase 3: Hooks
+| ID | Description | Verification |
+|----|-------------|--------------|
+| hook-audit-logger | Log tool usage without content, hash file paths | Function callable, returns expected format |
+| hook-block-writes | Prevent writes outside allowed paths | Deny for external, empty for allowed |
+| hook-state-mutation | Track Edit operations on state.json | `pytest tests/test_hooks.py` exits 0 |
 
-### Phase 4: Session manager (Human gate)
-- ClaudeSDKClient wrapper
-- Session resumption via stored session_id
-- Interaction loop with streaming responses
-- Cost tracking from ResultMessage
-- Error handling with user-friendly messages
-- **Gate:** Review session.py draft before proceeding
+### Phase 4: Session manager
+| ID | Description | Verification |
+|----|-------------|--------------|
+| usage-report | UsageReport dataclass, update_from_result(), summary() | Import succeeds, summary format correct |
+| session-manager-basic | ClaudeSDKClient wrapper, capture session_id | Import succeeds, matches design doc 3.1 |
+| session-interaction-loop | Streaming responses, user input loop | Method exists with async handling |
+| session-resumption | Resume via stored session_id | Accepts resume_id, persists to .chat-retro/ |
 
-### Phase 5: CLI entry point (Ralph-able)
-- argparse: `chat-retro <export_path> [--resume <session_id>]`
-- Wire together session manager + state manager
-- Graceful interrupt handling (Ctrl+C)
-- **Completion:** `uv run python -m chat_retro --help` exits 0
+### Phase 5: CLI entry point
+| ID | Description | Verification |
+|----|-------------|--------------|
+| cli-argparse | argparse with export_path, --resume | `python -m chat_retro --help` exits 0 |
+| cli-wire-components | Wire session + state managers, Ctrl+C handling | Loads state.json, graceful shutdown |
 
-### Phase 6: Artifact generator (Ralph-able)
-- D3.js bundling (~250KB minified)
-- HTML template with data embedding
-- Markdown templates for reflections
-- **Completion:** `uv run pytest tests/test_artifacts.py` exits 0
+### Phase 6: Artifact generator
+| ID | Description | Verification |
+|----|-------------|--------------|
+| artifact-html-template | Self-contained HTML per ADR-003 | Valid HTML, no external requests |
+| artifact-d3-bundling | D3.js minified inlined (~250KB) | Works from file:// protocol |
+| artifact-generator-class | ArtifactGenerator with generate_html/markdown | `pytest tests/test_artifacts.py` exits 0 |
 
-### Phase 7: System prompts (Human gate)
-- Agent persona from design doc section 4.1
-- Tool usage instructions
-- Analysis approach guidance
-- **Gate:** Review prompt before embedding
+### Phase 7: System prompts
+| ID | Description | Verification |
+|----|-------------|--------------|
+| system-prompt | Agent persona from design doc 4.1 | Exists in prompts.py, covers all sections |
+| error-handling | User-friendly messages, RateLimiter | USER_ERRORS dict, RateLimiter class |
 
-### Phase 8: Integration test (Human gate)
-- End-to-end with sample export from __data__/
-- Verify session resumption works
-- Verify artifact generation works
-- **Gate:** Human verifies experience feels collaborative
+### Phase 8: Integration & polish
+| ID | Description | Verification |
+|----|-------------|--------------|
+| runtime-dirs | Create .chat-retro/, outputs/ on first run | Dirs created, no errors on repeat |
+| integration-test | E2E with sample export | State saves, artifact renders |
+| claude-export-format | Support Claude export format | Agent identifies format correctly |
 
-## Infrastructure
-
-### Subagents (created during build)
-
-**tester**
-- Purpose: Write tests in parallel while implementing
-- Tools: [Read, Grep, Write, Bash]
-- Model: haiku
-
-### Skills (created if needed)
-
-**claude-agent-sdk**
-- SDK patterns, message types, common idioms
-- Created during Phase 4 if SDK usage proves complex
-
-### Hooks
-
-None for orchestration - hooks in the product are what we're building, not for building it.
+**Total: 20 features**
 
 ## Human Gates
 
@@ -126,17 +112,8 @@ None for orchestration - hooks in the product are what we're building, not for b
 | D3.js bundling complexity | Start simple inline, iterate |
 | pyproject.toml has wrong deps | Phase 1 fixes first |
 
-## Notes
-
-- Design doc (design.md) has detailed code samples for each component
-- Current pyproject.toml has old deps from abandoned deterministic pipeline
-- Ralph Wiggum plugin already installed
-- Estimated ~400 lines total per design doc
-
 ## Progress Log
-
-<!-- Update this section as phases complete -->
 
 | Date | Phase | Notes |
 |------|-------|-------|
-| - | - | - |
+| 2025-12-27 | Init | Created scaffolding: feature_list.json, PROGRESS.md, init.sh |

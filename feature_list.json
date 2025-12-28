@@ -1,0 +1,230 @@
+{
+  "meta": {
+    "created": "2025-12-27",
+    "spec_version": "1.0",
+    "design_version": "1.0",
+    "total_features": 20
+  },
+  "features": [
+    {
+      "id": "proj-setup",
+      "category": "infrastructure",
+      "priority": 1,
+      "description": "Fix pyproject.toml: remove old deps (numpy, sentence-transformers, scikit-learn, tqdm), add claude-agent-sdk. Create src/chat_retro/__init__.py and __main__.py. Create tests/ directory structure.",
+      "verification_steps": [
+        "uv sync succeeds without errors",
+        "src/chat_retro/__init__.py exists",
+        "src/chat_retro/__main__.py exists with main() stub",
+        "tests/ directory exists"
+      ],
+      "passes": false
+    },
+    {
+      "id": "state-models",
+      "category": "functional",
+      "priority": 2,
+      "description": "Pydantic models for AnalysisState, StateMeta, Pattern, UserPreferences, SnapshotRef with schema_version field.",
+      "verification_steps": [
+        "uv run python -c 'from chat_retro.state import AnalysisState' succeeds",
+        "Models validate sample state.json structure from design doc"
+      ],
+      "passes": false
+    },
+    {
+      "id": "state-manager",
+      "category": "functional",
+      "priority": 3,
+      "description": "StateManager class with load(), save(), and merge_patterns() methods. Atomic save with tmp file rename. Corruption recovery with .corrupt backup.",
+      "verification_steps": [
+        "uv run pytest tests/test_state.py exits 0"
+      ],
+      "passes": false
+    },
+    {
+      "id": "hook-audit-logger",
+      "category": "functional",
+      "priority": 4,
+      "description": "audit_logger hook that logs tool usage without exposing content. Hash file paths, log tool names/timestamps/session IDs only.",
+      "verification_steps": [
+        "Hook function exists and is callable",
+        "Returns expected output format per SDK spec"
+      ],
+      "passes": false
+    },
+    {
+      "id": "hook-block-writes",
+      "category": "functional",
+      "priority": 5,
+      "description": "block_external_writes hook that prevents writes outside ./outputs/, ./state.json, ./.chat-retro/",
+      "verification_steps": [
+        "Returns deny for paths outside allowed prefixes",
+        "Returns empty dict for allowed paths"
+      ],
+      "passes": false
+    },
+    {
+      "id": "hook-state-mutation",
+      "category": "functional",
+      "priority": 6,
+      "description": "state_mutation_logger hook that tracks Edit operations on state.json for efficiency analysis.",
+      "verification_steps": [
+        "uv run pytest tests/test_hooks.py exits 0"
+      ],
+      "passes": false
+    },
+    {
+      "id": "usage-report",
+      "category": "functional",
+      "priority": 7,
+      "description": "UsageReport dataclass that tracks costs and tokens. update_from_result() method processes ResultMessage. summary() returns formatted string.",
+      "verification_steps": [
+        "uv run python -c 'from chat_retro.usage import UsageReport' succeeds",
+        "UsageReport.summary() returns expected format"
+      ],
+      "passes": false
+    },
+    {
+      "id": "session-manager-basic",
+      "category": "functional",
+      "priority": 8,
+      "description": "SessionManager class wrapping ClaudeSDKClient. start_session() method that captures session_id from init message.",
+      "verification_steps": [
+        "uv run python -c 'from chat_retro.session import SessionManager' succeeds",
+        "Code matches design doc section 3.1 patterns"
+      ],
+      "passes": false
+    },
+    {
+      "id": "session-interaction-loop",
+      "category": "functional",
+      "priority": 9,
+      "description": "run_interaction_loop() method with streaming response handling. User input loop with exit/quit support.",
+      "verification_steps": [
+        "Method exists with async generator handling",
+        "Handles ResultMessage for cost tracking"
+      ],
+      "passes": false
+    },
+    {
+      "id": "session-resumption",
+      "category": "functional",
+      "priority": 10,
+      "description": "Session resumption via stored session_id. Pass to ClaudeAgentOptions(resume=session_id).",
+      "verification_steps": [
+        "start_session() accepts resume_id parameter",
+        "Session ID persisted to .chat-retro/sessions/"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cli-argparse",
+      "category": "functional",
+      "priority": 11,
+      "description": "CLI entry point with argparse: chat-retro <export_path> [--resume <session_id>]",
+      "verification_steps": [
+        "uv run python -m chat_retro --help exits 0",
+        "Shows export_path and --resume arguments"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cli-wire-components",
+      "category": "functional",
+      "priority": 12,
+      "description": "Wire together session manager + state manager in CLI. Graceful Ctrl+C interrupt handling.",
+      "verification_steps": [
+        "CLI loads state.json if exists",
+        "Ctrl+C triggers graceful shutdown"
+      ],
+      "passes": false
+    },
+    {
+      "id": "artifact-html-template",
+      "category": "functional",
+      "priority": 13,
+      "description": "HTML template structure per ADR-003. Self-contained with inlined CSS/JS, DATA constant for embedded JSON.",
+      "verification_steps": [
+        "Template produces valid HTML",
+        "No external network requests in output"
+      ],
+      "passes": false
+    },
+    {
+      "id": "artifact-d3-bundling",
+      "category": "functional",
+      "priority": 14,
+      "description": "D3.js minified bundle (~250KB) inlined in HTML output. Works from file:// protocol.",
+      "verification_steps": [
+        "D3.js source included in artifacts.py or bundled file",
+        "Generated HTML works when opened as local file"
+      ],
+      "passes": false
+    },
+    {
+      "id": "artifact-generator-class",
+      "category": "functional",
+      "priority": 15,
+      "description": "ArtifactGenerator class with generate_html() and generate_markdown() methods.",
+      "verification_steps": [
+        "uv run pytest tests/test_artifacts.py exits 0"
+      ],
+      "passes": false
+    },
+    {
+      "id": "system-prompt",
+      "category": "functional",
+      "priority": 16,
+      "description": "System prompt from design doc section 4.1. Agent persona as chat retrospective analyst. Tool usage instructions. Analysis approach guidance.",
+      "verification_steps": [
+        "Prompt exists in prompts.py",
+        "Covers role, tools, approach, constraints"
+      ],
+      "passes": false
+    },
+    {
+      "id": "error-handling",
+      "category": "functional",
+      "priority": 17,
+      "description": "User-friendly error messages for CLINotFoundError, ProcessError, FileNotFoundError per design doc section 4.5.",
+      "verification_steps": [
+        "USER_ERRORS dict exists with friendly messages",
+        "RateLimiter class implemented"
+      ],
+      "passes": false
+    },
+    {
+      "id": "runtime-dirs",
+      "category": "functional",
+      "priority": 18,
+      "description": "Create runtime directories on first run: .chat-retro/, .chat-retro/sessions/, outputs/",
+      "verification_steps": [
+        "Directories created if missing",
+        "No errors on repeated runs"
+      ],
+      "passes": false
+    },
+    {
+      "id": "integration-test",
+      "category": "polish",
+      "priority": 19,
+      "description": "End-to-end test with sample export. Verify session works, state saves, artifact generates.",
+      "verification_steps": [
+        "Run with sample ChatGPT export",
+        "state.json created with patterns",
+        "HTML artifact renders in browser"
+      ],
+      "passes": false
+    },
+    {
+      "id": "claude-export-format",
+      "category": "polish",
+      "priority": 20,
+      "description": "Support Claude export format in addition to ChatGPT. Agent detects format and adapts.",
+      "verification_steps": [
+        "Run with sample Claude export",
+        "Agent correctly identifies format"
+      ],
+      "passes": false
+    }
+  ]
+}

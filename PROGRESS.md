@@ -1,10 +1,10 @@
 # Progress
 
 ## Current Status
-Project initialized. Ready to begin Phase 1 (project setup).
+Phase 1 complete. Ready for Phase 2 (state schema).
 
 ## Completed Features
-None yet.
+- proj-setup: Fixed pyproject.toml, created package structure
 
 ## Feature Summary
 - **Total**: 20 features
@@ -31,6 +31,7 @@ None yet.
 - Created feature_list.json with 20 features
 - Created PROGRESS.md
 - Created init.sh
+- Phase 1: Fixed pyproject.toml (claude-code-sdk>=0.0.25), created src/chat_retro/, tests/
 
 ## Decisions
 - Following impl-plan.md phases exactly

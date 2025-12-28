@@ -2,46 +2,38 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Quick Map
 
-## Commands
+- Entry: `__main__.py` → `session.py:SessionManager`
+- State: `state.py` (Pydantic models)
+- Agent config: `agents.py`, `insights.py`
+- Hooks: `hooks.py:HOOK_MATCHERS`
 
-```bash
-uv sync                                        # Install dependencies
-uv run pytest tests/test_state.py -k test_name # Single test
-uv run pytest                                  # All tests
-uv run pyright                                 # Type check
-```
+## Design Constraints
 
-## Architecture
+- **Agentic**: SDK built-in tools on raw exports. No custom MCP tools.
+- **Local state**: All state in project directory. No Claude memory integration.
+- **Offline artifacts**: HTML outputs inline D3.js. No network requests.
 
-### Data Flow
+## Development Principles
 
-```
-User input → SessionManager → ClaudeSDKClient → Agent explores export with built-in tools
-                                              → StateManager persists patterns to state.json
-                                              → ArtifactBuilder generates HTML to outputs/
-```
+- "Measure before changing." Agent output is non-deterministic. "it seems better" is not evidence.
+- "Dogfood relentlessly." Real usage beats synthetic tests.
 
-### Key Modules
+## Checklist
 
-- `session.py:SessionManager` — Wraps ClaudeSDKClient, manages interaction loop
-- `state.py:AnalysisState` — Pydantic model with pattern merging and migration
-- `prompts.py:SYSTEM_PROMPT` — Agent instructions for analysis behavior
-- `artifacts.py` — HTML bundler that inlines D3.js
-- `hooks.py:HOOK_MATCHERS` — SDK hook configuration for audit logging
-
-### Design Decisions (docs/adr/)
-
-1. **Agentic over deterministic** (ADR-001): SDK built-in tools on raw exports. No custom MCP tools.
-2. **Local state only** (ADR-002): All state in project directory. No Claude memory integration.
-3. **Self-contained artifacts** (ADR-003): HTML outputs inline D3.js. No network requests.
-
-## Development Principle
-
-"Measure before changing." Agent output is non-deterministic. "it seems better" is not evidence.
+When adding or modifying SDK constructs (agents, hooks, skills) or runtime definitions (state schema, log formats) → update `docs/reference/`
 
 ## Security Patterns
 
 <!-- Promote to LEARNINGS.md if any of the learnings sections grows beyond 5 total items together -->
 
 - **Path validation**: Never use string prefix checks for path access control. Always resolve to absolute paths first with `Path.resolve()`, then use `is_relative_to()` for containment checks. See `hooks.py:block_external_writes()`.
+
+## Known Deficiencies
+
+<!-- Anti-patterns to avoid -->
+
+- **JSON schema in prompt**: Embedding JSON schemas in system prompts to steer agent output is fragile. Use structured outputs instead.
+- **Legacy Python compatibility**: Python 3.12+ only. Do not use `from __future__ import annotations`, `typing.Dict`, `typing.List`, etc. Use native syntax: `dict`, `list`, `X | None`.
+- **Legacy Pydantic syntax**: Pydantic v2+ only. Do not use v1 patterns like `class Config`, `@validator`. Use `model_config`, `@field_validator`.

@@ -4,18 +4,23 @@ These agents analyze patterns and generate specific, actionable suggestions
 for improving AI conversation effectiveness.
 """
 
+from enum import StrEnum
+
 from claude_agent_sdk import AgentDefinition
 
 
-# ============================================================================
-# Agent definitions for insights
-# ============================================================================
+class InsightKey(StrEnum):
+    """Available insight agent identifiers."""
+
+    PROMPT_IMPROVER = "prompt-improver"
+    REPETITION_DETECTOR = "repetition-detector"
+    USAGE_OPTIMIZER = "usage-optimizer"
 
 
-# Prompt improvement insight agent
-PROMPT_IMPROVER = AgentDefinition(
-    description="Generate concrete prompt improvement suggestions with before/after examples.",
-    prompt="""You are a prompt engineering coach analyzing AI conversation history.
+INSIGHT_AGENTS: dict[InsightKey, AgentDefinition] = {
+    InsightKey.PROMPT_IMPROVER: AgentDefinition(
+        description="Generate concrete prompt improvement suggestions with before/after examples.",
+        prompt="""You are a prompt engineering coach analyzing AI conversation history.
 
 Your task:
 1. Review the user's prompting patterns in the conversations
@@ -31,15 +36,12 @@ Focus on:
 - Output format requests
 
 Be specific. Use real examples from the conversations. Don't be generic.""",
-    tools=["Read", "Grep", "Glob"],
-    model="sonnet",
-)
-
-
-# Repetition detection insight agent
-REPETITION_DETECTOR = AgentDefinition(
-    description="Identify repetitive queries and suggest templates for common patterns.",
-    prompt="""You are a workflow efficiency analyst examining AI conversation history.
+        tools=["Read", "Grep", "Glob"],
+        model="sonnet",
+    ),
+    InsightKey.REPETITION_DETECTOR: AgentDefinition(
+        description="Identify repetitive queries and suggest templates for common patterns.",
+        prompt="""You are a workflow efficiency analyst examining AI conversation history.
 
 Your task:
 1. Find repetitive or similar queries the user makes frequently
@@ -54,15 +56,12 @@ Look for:
 - Repeated context-setting
 
 Templates should be practical and immediately usable.""",
-    tools=["Read", "Grep", "Glob"],
-    model="sonnet",
-)
-
-
-# Usage optimization insight agent
-USAGE_OPTIMIZER = AgentDefinition(
-    description="Generate time and context recommendations for optimal AI usage.",
-    prompt="""You are a productivity analyst examining AI conversation history.
+        tools=["Read", "Grep", "Glob"],
+        model="sonnet",
+    ),
+    InsightKey.USAGE_OPTIMIZER: AgentDefinition(
+        description="Generate time and context recommendations for optimal AI usage.",
+        prompt="""You are a productivity analyst examining AI conversation history.
 
 Your task:
 1. Analyze when the user gets best results (time, context, approach)
@@ -76,19 +75,12 @@ Consider:
 - Session length and depth patterns
 
 Be specific to this user's actual usage data. Avoid generic advice.""",
-    tools=["Read", "Grep", "Glob"],
-    model="sonnet",
-)
-
-
-# All insight agents
-INSIGHT_AGENTS: dict[str, AgentDefinition] = {
-    "prompt-improver": PROMPT_IMPROVER,
-    "repetition-detector": REPETITION_DETECTOR,
-    "usage-optimizer": USAGE_OPTIMIZER,
+        tools=["Read", "Grep", "Glob"],
+        model="sonnet",
+    ),
 }
 
 
 def get_insight_agents() -> dict[str, AgentDefinition]:
     """Get insight agents for ClaudeAgentOptions."""
-    return dict(INSIGHT_AGENTS)
+    return {k: v for k, v in INSIGHT_AGENTS.items()}

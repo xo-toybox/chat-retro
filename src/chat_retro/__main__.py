@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .session import SessionManager
 from .state import StateManager
+from .templates import get_template, list_templates
 
 # Runtime directories
 RUNTIME_DIRS = [
@@ -47,11 +48,34 @@ def parse_args() -> argparse.Namespace:
         metavar="SESSION_ID",
         help="Resume a previous session by ID",
     )
+    parser.add_argument(
+        "-t",
+        "--template",
+        type=str,
+        metavar="TEMPLATE_ID",
+        help="Use a predefined analysis template (see --list-templates)",
+    )
+    parser.add_argument(
+        "--list-templates",
+        action="store_true",
+        help="List available analysis templates and exit",
+    )
     return parser.parse_args()
 
 
 async def run_async(args: argparse.Namespace) -> int:
     """Run the async session."""
+    # Handle --list-templates early exit
+    if args.list_templates:
+        templates = list_templates()
+        if not templates:
+            print("No templates available.")
+        else:
+            print("Available templates:\n")
+            for t in templates:
+                print(f"  {t.id:<20} {t.description}")
+        return 0
+
     export_path = args.export_path
 
     if export_path is None:
@@ -75,10 +99,24 @@ async def run_async(args: argparse.Namespace) -> int:
     else:
         print(f"Loaded state with {len(state.patterns)} existing patterns.")
 
+    # Build initial prompt from template if specified
+    initial_prompt = None
+    if args.template:
+        template = get_template(args.template)
+        if template is None:
+            print(f"Error: Unknown template: {args.template}", file=sys.stderr)
+            print("Use --list-templates to see available options.", file=sys.stderr)
+            return 1
+        # Compose: base instruction + template-specific content
+        base_instruction = f"Analyze the conversation export at {export_path}."
+        initial_prompt = f"{base_instruction}\n\n{template.prompt}"
+        print(f"Using template: {template.name}")
+
     # Create session manager
     session_manager = SessionManager(
         export_path=export_path,
         resume_id=args.resume,
+        initial_prompt=initial_prompt,
     )
 
     # Set up interrupt handler

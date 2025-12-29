@@ -1,8 +1,10 @@
 """Session management for chat-retro."""
 
 
+import asyncio
 import json
 import sys
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -16,11 +18,17 @@ from claude_agent_sdk import (
     ResultMessage,
     TextBlock,
 )
+from claude_agent_sdk.types import StreamEvent
 
 from .agents import get_agents
 from .hooks import HOOK_MATCHERS
 from .prompts import SYSTEM_PROMPT
 from .usage import UsageReport
+
+
+# Configuration
+RESPONSE_TIMEOUT_SECONDS = 600  # 10 minutes max for any single response
+HEARTBEAT_INTERVAL_SECONDS = 30  # Show progress every 30 seconds of silence
 
 
 # User-friendly error messages
@@ -35,6 +43,11 @@ USER_ERRORS = {
         "Your progress is saved. Run again to resume."
     ),
     FileNotFoundError: "Export file not found: {path}\nCheck the path and try again.",
+    TimeoutError: (
+        "Response timed out after {timeout}s.\n"
+        "The agent may be processing a very large file.\n"
+        "Your progress is saved. Run again to resume."
+    ),
 }
 
 
@@ -58,10 +71,12 @@ class SessionManager:
         export_path: Path,
         resume_id: str | None = None,
         cwd: Path | None = None,
+        initial_prompt: str | None = None,
     ):
         self.export_path = export_path
         self.resume_id = resume_id
         self.cwd = cwd or Path.cwd()
+        self.initial_prompt = initial_prompt
         self.session = Session(export_path=export_path)
         self._client: ClaudeSDKClient | None = None
 
@@ -74,7 +89,52 @@ class SessionManager:
             resume=self.resume_id,
             hooks=HOOK_MATCHERS,
             agents=get_agents(),
+            include_partial_messages=True,  # Enable streaming visibility
         )
+
+    async def _receive_with_timeout(
+        self,
+        client: ClaudeSDKClient,
+        timeout: float = RESPONSE_TIMEOUT_SECONDS,
+    ):
+        """Receive response with timeout and heartbeat progress indicator.
+
+        Yields messages from the client, showing periodic heartbeat when
+        no visible output is produced. Times out if no messages received
+        within the timeout period.
+        """
+        start_time = time.monotonic()
+        last_heartbeat = start_time
+        message_count = 0
+
+        try:
+            async with asyncio.timeout(timeout):
+                async for msg in client.receive_response():
+                    now = time.monotonic()
+                    message_count += 1
+
+                    # StreamEvents are partial - show heartbeat for long streams
+                    if isinstance(msg, StreamEvent):
+                        if now - last_heartbeat >= HEARTBEAT_INTERVAL_SECONDS:
+                            elapsed = int(now - start_time)
+                            print(
+                                f"  [working... {elapsed}s, {message_count} events]",
+                                file=sys.stderr,
+                            )
+                            last_heartbeat = now
+                        continue  # Don't yield partial events to caller
+
+                    yield msg
+
+                    if isinstance(msg, ResultMessage):
+                        return
+        except TimeoutError:
+            elapsed = int(time.monotonic() - start_time)
+            print(
+                f"\n{USER_ERRORS[TimeoutError].format(timeout=timeout)}",
+                file=sys.stderr,
+            )
+            raise
 
     def _save_session_id(self, session_id: str) -> None:
         """Persist session ID for future resumption."""
@@ -109,12 +169,15 @@ class SessionManager:
                 self._client = client
 
                 # Initial query
-                initial_prompt = f"Analyze the conversation export at {self.export_path}"
+                prompt = (
+                    self.initial_prompt
+                    or f"Analyze the conversation export at {self.export_path}"
+                )
                 self.session.usage.start_turn()
-                await client.query(initial_prompt)
+                await client.query(prompt)
 
                 # Process initial response
-                async for msg in client.receive_response():
+                async for msg in self._receive_with_timeout(client):
                     if isinstance(msg, AssistantMessage):
                         self._display_message(msg)
                     elif isinstance(msg, ResultMessage):
@@ -141,7 +204,7 @@ class SessionManager:
                     self.session.usage.start_turn()
                     await client.query(user_input)
 
-                    async for msg in client.receive_response():
+                    async for msg in self._receive_with_timeout(client):
                         if isinstance(msg, AssistantMessage):
                             self._display_message(msg)
                         elif isinstance(msg, ResultMessage):
@@ -158,6 +221,10 @@ class SessionManager:
         except ProcessError as e:
             self.session.usage.record_error(e)
             print(USER_ERRORS[ProcessError], file=sys.stderr)
+            raise
+        except TimeoutError as e:
+            self.session.usage.record_error(e)
+            # Error message already printed in _receive_with_timeout
             raise
         finally:
             self._client = None

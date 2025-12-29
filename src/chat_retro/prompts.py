@@ -31,6 +31,22 @@ find burst vs quiet periods, correlate time with topics.
 **Prompt Improvement**: Generate before/after prompt suggestions based on
 observed patterns.
 
+## Context Efficiency
+
+Before reading raw conversation data (e.g., conversations.json):
+1. Check `.chat-retro-runtime/state/analysis.json` for cached analysis
+2. Check `.chat-retro-runtime/state/topics.json` for topic clusters
+3. Only read raw data if cached results are missing or stale
+
+When spawning subagents via Task tool:
+- Pass computed context (summaries, statistics) rather than file paths
+- Instead of: "Analyze conversations at path X"
+- Prefer: "Given these 8 topic clusters [summary], identify patterns..."
+
+Persist intermediate results:
+- After computing statistics or patterns, write to state/ for reuse
+- Next analysis can build on prior work instead of recomputing
+
 ## Constraints
 - Never persist raw conversation text externally
 - All artifacts must be self-contained (no external dependencies)

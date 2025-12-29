@@ -5,10 +5,7 @@ from claude_agent_sdk import AgentDefinition
 
 from chat_retro.agents import (
     AGENTS,
-    TOPIC_EXTRACTOR,
-    SENTIMENT_TRACKER,
-    PATTERN_DETECTOR,
-    TEMPORAL_ANALYST,
+    AgentKey,
     get_agents,
 )
 
@@ -33,23 +30,27 @@ class TestTopicExtractor:
 
     def test_has_required_fields(self):
         """Topic extractor has all required fields."""
-        assert TOPIC_EXTRACTOR.description
-        assert TOPIC_EXTRACTOR.prompt
-        assert TOPIC_EXTRACTOR.tools
-        assert TOPIC_EXTRACTOR.model
+        agent = AGENTS[AgentKey.TOPIC_EXTRACTOR]
+        assert agent.description
+        assert agent.prompt
+        assert agent.tools
+        assert agent.model
 
     def test_description_mentions_topics(self):
         """Description explains the agent's purpose."""
-        assert "topic" in TOPIC_EXTRACTOR.description.lower()
+        agent = AGENTS[AgentKey.TOPIC_EXTRACTOR]
+        assert "topic" in agent.description.lower()
 
     def test_has_file_reading_tools(self):
         """Topic extractor can read files."""
-        assert "Read" in TOPIC_EXTRACTOR.tools
-        assert "Grep" in TOPIC_EXTRACTOR.tools
+        agent = AGENTS[AgentKey.TOPIC_EXTRACTOR]
+        assert "Read" in agent.tools
+        assert "Grep" in agent.tools
 
     def test_uses_capable_model(self):
         """Uses a capable model for complex analysis."""
-        assert TOPIC_EXTRACTOR.model in ("sonnet", "opus")
+        agent = AGENTS[AgentKey.TOPIC_EXTRACTOR]
+        assert agent.model in ("sonnet", "opus")
 
 
 class TestSentimentTracker:
@@ -57,14 +58,16 @@ class TestSentimentTracker:
 
     def test_has_required_fields(self):
         """Sentiment tracker has all required fields."""
-        assert SENTIMENT_TRACKER.description
-        assert SENTIMENT_TRACKER.prompt
-        assert SENTIMENT_TRACKER.tools
-        assert SENTIMENT_TRACKER.model
+        agent = AGENTS[AgentKey.SENTIMENT_TRACKER]
+        assert agent.description
+        assert agent.prompt
+        assert agent.tools
+        assert agent.model
 
     def test_description_mentions_sentiment(self):
         """Description explains sentiment analysis."""
-        desc_lower = SENTIMENT_TRACKER.description.lower()
+        agent = AGENTS[AgentKey.SENTIMENT_TRACKER]
+        desc_lower = agent.description.lower()
         assert "sentiment" in desc_lower or "emotion" in desc_lower
 
 
@@ -73,14 +76,16 @@ class TestPatternDetector:
 
     def test_has_required_fields(self):
         """Pattern detector has all required fields."""
-        assert PATTERN_DETECTOR.description
-        assert PATTERN_DETECTOR.prompt
-        assert PATTERN_DETECTOR.tools
-        assert PATTERN_DETECTOR.model
+        agent = AGENTS[AgentKey.PATTERN_DETECTOR]
+        assert agent.description
+        assert agent.prompt
+        assert agent.tools
+        assert agent.model
 
     def test_description_mentions_patterns(self):
         """Description explains pattern detection."""
-        assert "pattern" in PATTERN_DETECTOR.description.lower()
+        agent = AGENTS[AgentKey.PATTERN_DETECTOR]
+        assert "pattern" in agent.description.lower()
 
 
 class TestTemporalAnalyst:
@@ -88,19 +93,22 @@ class TestTemporalAnalyst:
 
     def test_has_required_fields(self):
         """Temporal analyst has all required fields."""
-        assert TEMPORAL_ANALYST.description
-        assert TEMPORAL_ANALYST.prompt
-        assert TEMPORAL_ANALYST.tools
-        assert TEMPORAL_ANALYST.model
+        agent = AGENTS[AgentKey.TEMPORAL_ANALYST]
+        assert agent.description
+        assert agent.prompt
+        assert agent.tools
+        assert agent.model
 
     def test_description_mentions_time(self):
         """Description explains temporal analysis."""
-        desc_lower = TEMPORAL_ANALYST.description.lower()
+        agent = AGENTS[AgentKey.TEMPORAL_ANALYST]
+        desc_lower = agent.description.lower()
         assert "time" in desc_lower or "temporal" in desc_lower
 
     def test_uses_efficient_model(self):
         """Uses lighter model for metadata analysis."""
-        assert TEMPORAL_ANALYST.model == "haiku"
+        agent = AGENTS[AgentKey.TEMPORAL_ANALYST]
+        assert agent.model == "haiku"
 
 
 class TestAgentsRegistry:

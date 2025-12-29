@@ -1,6 +1,7 @@
 """State management for chat-retro analysis sessions."""
 
 
+import hashlib
 import json
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -18,6 +19,7 @@ class StateMeta(BaseModel):
     conversation_count: int = 0
     date_range: tuple[str, str] | None = None
     export_format: Literal["chatgpt", "claude"] | None = None
+    export_file_hash: str | None = None  # SHA256 for cache invalidation
 
 
 class TemporalInfo(BaseModel):
@@ -167,9 +169,11 @@ class StateManager:
         self,
         conversation_count: int = 0,
         export_format: Literal["chatgpt", "claude"] | None = None,
+        export_path: Path | None = None,
     ) -> AnalysisState:
         """Create a new initial state."""
         now = datetime.now()
+        file_hash = self.compute_export_hash(export_path) if export_path else None
         return AnalysisState(
             schema_version=self.CURRENT_VERSION,
             meta=StateMeta(
@@ -177,5 +181,85 @@ class StateManager:
                 last_updated=now,
                 conversation_count=conversation_count,
                 export_format=export_format,
+                export_file_hash=file_hash,
             ),
         )
+
+    @staticmethod
+    def compute_export_hash(export_path: Path) -> str | None:
+        """Compute SHA256 hash of export file for cache invalidation.
+
+        Uses first 1MB only to avoid hashing 400MB files.
+        """
+        if not export_path or not export_path.exists():
+            return None
+
+        hasher = hashlib.sha256()
+        with export_path.open("rb") as f:
+            # Read first 1MB for fast hashing of large files
+            chunk = f.read(1024 * 1024)
+            hasher.update(chunk)
+            # Also hash file size for extra validation
+            f.seek(0, 2)  # Seek to end
+            hasher.update(str(f.tell()).encode())
+        return hasher.hexdigest()[:16]  # Short hash is sufficient
+
+    def is_cache_valid(self, export_path: Path) -> bool:
+        """Check if cached analysis is still valid for given export file."""
+        state = self.load()
+        if state is None:
+            return False
+
+        if state.meta.export_file_hash is None:
+            return False
+
+        current_hash = self.compute_export_hash(export_path)
+        return state.meta.export_file_hash == current_hash
+
+    def get_cached_summary(self, export_path: Path | None = None) -> dict | None:
+        """Get cached analysis summary if valid, None otherwise.
+
+        Returns a lightweight dict with key metrics for subagent context:
+        - meta: creation date, conversation count, date range
+        - patterns: list of pattern summaries
+        - topic_clusters: loaded from topics.json if available
+
+        If export_path is provided, validates cache against file hash.
+        """
+        state = self.load()
+        if state is None:
+            return None
+
+        # Validate cache if export path provided
+        if export_path and not self.is_cache_valid(export_path):
+            return None
+
+        # Load topics.json if available
+        topics_path = self.state_path.parent / "topics.json"
+        topics = None
+        if topics_path.exists():
+            try:
+                topics = json.loads(topics_path.read_text())
+            except (json.JSONDecodeError, OSError):
+                pass
+
+        return {
+            "meta": {
+                "created": state.meta.created.isoformat(),
+                "last_updated": state.meta.last_updated.isoformat(),
+                "conversation_count": state.meta.conversation_count,
+                "date_range": state.meta.date_range,
+                "export_format": state.meta.export_format,
+            },
+            "patterns": [
+                {
+                    "id": p.id,
+                    "type": p.type,
+                    "label": p.label,
+                    "confidence": p.confidence,
+                }
+                for p in state.patterns
+            ],
+            "topic_clusters": topics.get("topics") if topics else None,
+            "cache_valid": True,
+        }

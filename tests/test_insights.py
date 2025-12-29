@@ -5,9 +5,7 @@ from claude_agent_sdk import AgentDefinition
 
 from chat_retro.insights import (
     INSIGHT_AGENTS,
-    PROMPT_IMPROVER,
-    REPETITION_DETECTOR,
-    USAGE_OPTIMIZER,
+    InsightKey,
     get_insight_agents,
 )
 
@@ -36,20 +34,23 @@ class TestPromptImprover:
 
     def test_has_required_fields(self):
         """Agent has all required fields."""
-        assert PROMPT_IMPROVER.description
-        assert PROMPT_IMPROVER.prompt
-        assert PROMPT_IMPROVER.tools
-        assert PROMPT_IMPROVER.model
+        agent = INSIGHT_AGENTS[InsightKey.PROMPT_IMPROVER]
+        assert agent.description
+        assert agent.prompt
+        assert agent.tools
+        assert agent.model
 
     def test_description_mentions_prompt(self):
         """Description explains the agent's purpose."""
-        desc_lower = PROMPT_IMPROVER.description.lower()
+        agent = INSIGHT_AGENTS[InsightKey.PROMPT_IMPROVER]
+        desc_lower = agent.description.lower()
         assert "prompt" in desc_lower
 
     def test_has_file_reading_tools(self):
         """Agent can read files."""
-        assert "Read" in PROMPT_IMPROVER.tools
-        assert "Grep" in PROMPT_IMPROVER.tools
+        agent = INSIGHT_AGENTS[InsightKey.PROMPT_IMPROVER]
+        assert "Read" in agent.tools
+        assert "Grep" in agent.tools
 
 
 class TestRepetitionDetector:
@@ -57,14 +58,16 @@ class TestRepetitionDetector:
 
     def test_has_required_fields(self):
         """Agent has all required fields."""
-        assert REPETITION_DETECTOR.description
-        assert REPETITION_DETECTOR.prompt
-        assert REPETITION_DETECTOR.tools
-        assert REPETITION_DETECTOR.model
+        agent = INSIGHT_AGENTS[InsightKey.REPETITION_DETECTOR]
+        assert agent.description
+        assert agent.prompt
+        assert agent.tools
+        assert agent.model
 
     def test_description_mentions_repetition(self):
         """Description explains the agent's purpose."""
-        desc_lower = REPETITION_DETECTOR.description.lower()
+        agent = INSIGHT_AGENTS[InsightKey.REPETITION_DETECTOR]
+        desc_lower = agent.description.lower()
         assert "repetit" in desc_lower or "template" in desc_lower
 
 
@@ -73,14 +76,16 @@ class TestUsageOptimizer:
 
     def test_has_required_fields(self):
         """Agent has all required fields."""
-        assert USAGE_OPTIMIZER.description
-        assert USAGE_OPTIMIZER.prompt
-        assert USAGE_OPTIMIZER.tools
-        assert USAGE_OPTIMIZER.model
+        agent = INSIGHT_AGENTS[InsightKey.USAGE_OPTIMIZER]
+        assert agent.description
+        assert agent.prompt
+        assert agent.tools
+        assert agent.model
 
     def test_description_mentions_usage(self):
         """Description explains the agent's purpose."""
-        desc_lower = USAGE_OPTIMIZER.description.lower()
+        agent = INSIGHT_AGENTS[InsightKey.USAGE_OPTIMIZER]
+        desc_lower = agent.description.lower()
         assert "usage" in desc_lower or "recommend" in desc_lower
 
 

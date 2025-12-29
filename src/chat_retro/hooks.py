@@ -1,14 +1,17 @@
 """Hooks for audit logging and write protection."""
 
-
-from claude_agent_sdk import HookMatcher
-
 import hashlib
 import json
 import os
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+from claude_agent_sdk import HookMatcher
+from claude_agent_sdk.types import HookCallback, HookContext, HookInput, HookJSONOutput
+
+from chat_retro.state import AnalysisState, Pattern, StateMeta, StateManager
 
 
 def _hash_path(path: str) -> str:
@@ -17,10 +20,10 @@ def _hash_path(path: str) -> str:
 
 
 async def audit_logger(
-    input_data: dict[str, Any],
+    input_data: HookInput,
     tool_use_id: str | None,
-    context: Any,
-) -> dict[str, Any]:
+    context: HookContext,
+) -> HookJSONOutput:
     """Log tool usage without exposing conversation content.
 
     Logs tool names, timestamps, and hashed file paths only.
@@ -51,10 +54,10 @@ async def audit_logger(
 
 
 async def block_external_writes(
-    input_data: dict[str, Any],
+    input_data: HookInput,
     tool_use_id: str | None,
-    context: Any,
-) -> dict[str, Any]:
+    context: HookContext,
+) -> HookJSONOutput:
     """Prevent writes outside project directory.
 
     Only allows writes to ./.chat-retro-runtime/.
@@ -102,10 +105,10 @@ async def block_external_writes(
 
 
 async def state_mutation_logger(
-    input_data: dict[str, Any],
+    input_data: HookInput,
     tool_use_id: str | None,
-    context: Any,
-) -> dict[str, Any]:
+    context: HookContext,
+) -> HookJSONOutput:
     """Log Edit operations on state.json for efficiency analysis.
 
     Tracks edit sizes to understand state update patterns.
@@ -139,10 +142,10 @@ async def state_mutation_logger(
 
 
 async def debug_logger(
-    input_data: dict[str, Any],
+    input_data: HookInput,
     tool_use_id: str | None,
-    context: Any,
-) -> dict[str, Any]:
+    context: HookContext,
+) -> HookJSONOutput:
     """Log full tool input/output for debugging.
 
     WARNING: Contains potentially sensitive data.
@@ -175,10 +178,10 @@ async def debug_logger(
 
 
 async def persist_task_results(
-    input_data: dict[str, Any],
+    input_data: HookInput,
     tool_use_id: str | None,
-    context: Any,
-) -> dict[str, Any]:
+    context: HookContext,
+) -> HookJSONOutput:
     """Auto-persist structured analysis results from Task tool completions.
 
     When a subagent (Task tool) completes with analysis results,
@@ -210,9 +213,7 @@ async def persist_task_results(
 
     # Attempt to extract JSON from response
     # Look for JSON blocks (common in agent outputs)
-    import re
-
-    json_pattern = re.compile(r"```json\s*([\s\S]*?)\s*```|(\{[\s\S]*\})")
+    json_pattern = re.compile(r"```json\s*([\s\S]*?)\s*```|(\{[\s\S]*?\})")
     matches = json_pattern.findall(tool_response)
 
     for match in matches:
@@ -259,12 +260,11 @@ def _persist_topics(data: dict[str, Any]) -> None:
 
 def _persist_patterns(data: dict[str, Any]) -> None:
     """Persist extracted pattern data to analysis.json."""
-    from chat_retro.state import Pattern, StateManager
-
     manager = StateManager()
     state = manager.load()
     if state is None:
-        return
+        now = datetime.now()
+        state = AnalysisState(meta=StateMeta(created=now, last_updated=now))
 
     # Parse and merge patterns
     new_patterns = []
@@ -284,7 +284,7 @@ def _persist_patterns(data: dict[str, Any]) -> None:
 _DEBUG_LOGGING = os.environ.get("CHAT_RETRO_DEBUG", "").lower() in ("1", "true", "yes")
 
 # Hook matchers for SDK configuration
-_post_hooks = [audit_logger, state_mutation_logger, persist_task_results]
+_post_hooks: list[HookCallback] = [audit_logger, state_mutation_logger, persist_task_results]
 if _DEBUG_LOGGING:
     _post_hooks.append(debug_logger)
 
